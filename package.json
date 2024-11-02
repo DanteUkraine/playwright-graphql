@@ -1,0 +1,42 @@
+{
+  "name": "@playwright/graphql",
+  "version": "1.0.0-RC",
+  "description": "This library provide playwright integration with graphql for efficient API tests.",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "tsc --build --clean",
+    "install:deps": "npm install --registry=https://registry.npmjs.org",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DanteUkraine/playwright-graphql.git"
+  },
+  "keywords": [
+    "playwright",
+    "graphql"
+  ],
+  "author": "Oleksandr Solomin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DanteUkraine/playwright-graphql/issues"
+  },
+  "homepage": "https://github.com/DanteUkraine/playwright-graphql#readme",
+  "dependencies": {
+    "@graphql-codegen/cli": "5.0.3",
+    "@graphql-codegen/typescript": "4.1.1",
+    "@graphql-codegen/typescript-generic-sdk": "4.0.1",
+    "@graphql-codegen/typescript-operations": "4.3.1",
+    "gql-generator": "2.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.2",
+    "@types/node": "^20.10.7",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.44.x",
+    "playwright-core": ">= 1.44.x"
+  }
+}
