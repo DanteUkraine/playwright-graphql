@@ -1,5 +1,5 @@
 {
-  "name": "@playwright/graphql",
+  "name": "playwright-graphql",
   "version": "1.0.0-RC",
   "description": "This library provide playwright integration with graphql for efficient API tests.",
   "main": "index.js",
