@@ -2,6 +2,7 @@ import {
     APIRequestContext,
 } from '@playwright/test';
 import { print, DocumentNode } from 'graphql';
+import 'json-bigint-patch';
 
 type PostOptionsType = NonNullable<Parameters<APIRequestContext['post']>[1]>;
 
@@ -13,8 +14,7 @@ type PlaywrightRequesterOptions = {
 
 type Requester<C = {}> = <R, V>(doc: DocumentNode, vars?: V, options?: C) => Promise<R> | AsyncIterable<R>;
 
-export function getSdkPlaywright<GQL>(client: APIRequestContext, getSdkFunction: (requester: Requester) => GQL) {
-    const gqlUrl = '/api/graphql';
+export function getSdkPlaywright<GQL>(client: APIRequestContext, getSdkFunction: (requester: Requester) => GQL, gqlEndpoint: string = '/api/graphql') {
     const validDocDefOps = ['mutation', 'query', 'subscription'];
 
     const requester: Requester<PlaywrightRequesterOptions> = async <R, V>(
@@ -44,7 +44,7 @@ export function getSdkPlaywright<GQL>(client: APIRequestContext, getSdkFunction:
             throw new Error('Subscription requests through SDK interface are not supported');
         }
 
-        const response = await client.post(gqlUrl, {
+        const response = await client.post(gqlEndpoint, {
             ...options,
             data: { variables, query: print(doc) },
         });

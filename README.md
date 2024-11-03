@@ -1,2 +1,9 @@
-# playwright-graphql
-This library provide playwright integration with graphql for efficient API tests.
+# Playwright-graphql
+This library provide playwright integration with graphql and typescript for efficient API tests.
+
+## Setup:
+
+    
+
+#### 
+
