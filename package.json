@@ -1,6 +1,6 @@
 {
   "name": "playwright-graphql",
-  "version": "1.0.0-RC-2",
+  "version": "1.0.0-RC-2.1",
   "description": "This library provide playwright integration with graphql for efficient API tests.",
   "main": "index.js",
   "scripts": {
