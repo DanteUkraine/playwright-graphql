@@ -14,10 +14,10 @@ type PlaywrightRequesterOptions = {
 
 type Requester<C = {}> = <R, V>(doc: DocumentNode, vars?: V, options?: C) => Promise<R> | AsyncIterable<R>;
 
-export function getSdkPlaywright<GQL>(client: APIRequestContext, getSdkFunction: (requester: Requester) => GQL, gqlEndpoint: string = '/api/graphql') {
+export function getSdkRequester(client: APIRequestContext, gqlUrl: string = '/api/graphql'): Requester<PlaywrightRequesterOptions> {
     const validDocDefOps = ['mutation', 'query', 'subscription'];
 
-    const requester: Requester<PlaywrightRequesterOptions> = async <R, V>(
+    return async <R, V>(
         doc: DocumentNode,
         variables: V,
         options?: PlaywrightRequesterOptions,
@@ -44,7 +44,7 @@ export function getSdkPlaywright<GQL>(client: APIRequestContext, getSdkFunction:
             throw new Error('Subscription requests through SDK interface are not supported');
         }
 
-        const response = await client.post(gqlEndpoint, {
+        const response = await client.post(gqlUrl, {
             ...options,
             data: { variables, query: print(doc) },
         });
@@ -55,8 +55,8 @@ export function getSdkPlaywright<GQL>(client: APIRequestContext, getSdkFunction:
         } catch (e) {
             throw new Error(
                 `${(e as Error).message}
-        \nHeaders: ${JSON.stringify(response.headers())}
-        \nResponse body is not a json but: ${await response.text()}`,
+        \nResponse body is not a json but: ${await response.text()}
+        \nHeaders: ${JSON.stringify(response.headers())}`,
             );
         }
 
@@ -78,6 +78,4 @@ export function getSdkPlaywright<GQL>(client: APIRequestContext, getSdkFunction:
 
         return json.data;
     };
-
-    return getSdkFunction(requester);
 }
