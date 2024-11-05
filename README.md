@@ -125,7 +125,7 @@ export const test = baseTest.extend<{}, WorkerFixtures>({
 
 *tests/example.test*
 ```ts
-import { test, expect } from "@fixtures/gql";
+import { test, expect } from '@fixtures/gql';
 
 test('playwright-graphql test', async ({ gql }) => {
     const res = await gql.getCityByName({
@@ -186,6 +186,42 @@ You can use [apollo explorer](https://studio.apollographql.com/sandbox/explorer)
     "codegen": "npm run generate:schema && npm run generate:operations && npm run generate:types",
     "test": "npx playwright test"
   },
+```
+
+#### Second operation options parameter
+
+Each generated operation accepts second optional parameter which represents options 
+from [post method](https://playwright.dev/docs/api/class-apirequestcontext#api-request-context-post) 
+in playwright except data and two extra options.
+
+- `returnRawJson` to return full payload in JSON format.
+- `failOnEmptyData` to not throw error in case of empty data. (Allows you to pars errors from payload)
+
+That is how second parameter type is declared.
+```ts
+type PlaywrightRequesterOptions = {
+    returnRawJson?: boolean;
+    failOnEmptyData?: boolean;
+} & Omit<PostOptionsType, 'data'>;
+```
+
+#### Negative test cases
+
+By design graphql response has field *data*, and *data* is being converted to types.
+
+In case of error graphql will not respond with 400x or 500x status codes but will add *errors* in to payload.
+That is why we need to use option: `failOnEmptyData: false` to verify errors.
+
+```ts
+import { test, expect } from '@fixtures/gql';
+
+test('playwright-graphql test negative', async ({ gql }) => {
+    const res = await gql.getCityByName({
+        name: 'Lviv'
+    }, { failOnEmptyData: false });
+
+    expect(res).toHaveProperty('errors[0].message');
+})
 ```
 
 Template project: https://github.com/DanteUkraine/playwright-graphql-example
