@@ -9,13 +9,15 @@ type PostOptionsType = NonNullable<Parameters<APIRequestContext['post']>[1]>;
 type PlaywrightRequesterOptions = {
     returnRawJson?: boolean;
     failOnEmptyData?: boolean;
-    headers?: PostOptionsType['headers'];
-} & Omit<PostOptionsType, 'data' | 'headers'>;
+} & Omit<PostOptionsType, 'data'>;
 
 type Requester<C = {}> = <R, V>(doc: DocumentNode, vars?: V, options?: C) => Promise<R> | AsyncIterable<R>;
 
-export function getSdkRequester(client: APIRequestContext, gqlUrl: string = '/api/graphql'): Requester<PlaywrightRequesterOptions> {
-    const validDocDefOps = ['mutation', 'query', 'subscription'];
+const operationDefinition = 'OperationDefinition';
+const subscription = 'subscription';
+
+export function getSdkRequester(client: APIRequestContext, gqlEndpoint: string = '/api/graphql'): Requester<PlaywrightRequesterOptions> {
+    const validDocDefOps = ['mutation', 'query', subscription];
 
     return async <R, V>(
         doc: DocumentNode,
@@ -25,7 +27,7 @@ export function getSdkRequester(client: APIRequestContext, gqlUrl: string = '/ap
         // Valid document should contain *single* query or mutation unless it's has a fragment
         if (
             doc.definitions.filter(
-                (d) => d.kind === 'OperationDefinition' && validDocDefOps.includes(d.operation),
+                (d) => d.kind === operationDefinition && validDocDefOps.includes(d.operation),
             ).length !== 1
         ) {
             throw new Error(
@@ -36,15 +38,15 @@ export function getSdkRequester(client: APIRequestContext, gqlUrl: string = '/ap
         const definition = doc.definitions[0];
 
         // Valid document should contain *OperationDefinition*
-        if (definition.kind !== 'OperationDefinition') {
+        if (definition.kind !== operationDefinition) {
             throw new Error('DocumentNode passed to Playwright must contain single query or mutation');
         }
 
-        if (definition.operation === 'subscription') {
+        if (definition.operation === subscription) {
             throw new Error('Subscription requests through SDK interface are not supported');
         }
 
-        const response = await client.post(gqlUrl, {
+        const response = await client.post(gqlEndpoint, {
             ...options,
             data: { variables, query: print(doc) },
         });
@@ -55,8 +57,9 @@ export function getSdkRequester(client: APIRequestContext, gqlUrl: string = '/ap
         } catch (e) {
             throw new Error(
                 `${(e as Error).message}
-        \nResponse body is not a json but: ${await response.text()}
-        \nHeaders: ${JSON.stringify(response.headers())}`,
+                \nStatus code: ${response.status()}
+                \nHeaders: ${JSON.stringify(response.headers())}
+                \nResponse body is not a json but: ${await response.text()}`,
             );
         }
 
@@ -64,7 +67,7 @@ export function getSdkRequester(client: APIRequestContext, gqlUrl: string = '/ap
             return json;
         }
 
-        if (json.data === undefined || json.data === null) {
+        if ([undefined, null].includes(json.data)) {
             const failOnEmptyData: boolean = options?.failOnEmptyData ?? true;
 
             if (!failOnEmptyData) {
