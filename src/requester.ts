@@ -1,5 +1,6 @@
 import {
-    APIRequestContext
+    APIRequestContext,
+    APIResponse
 } from 'playwright-core';
 import { print, DocumentNode } from 'graphql';
 import 'json-bigint-patch';
@@ -45,12 +46,7 @@ export function getSdkRequester(client: APIRequestContext, options: RequesterOpt
             try {
                 json = await response.json();
             } catch (e) {
-                throw new Error(
-                    `${(e as Error).message}
-                    \nStatus code: ${response.status()}
-                    \nHeaders: ${JSON.stringify(response.headers())}
-                    \nResponse body is not a json but: ${await response.text()}`,
-                );
+                throw new Error(await buildMessage(e, response));
             }
 
             if (options?.returnRawJson) {
@@ -87,12 +83,7 @@ export function getSdkRequester(client: APIRequestContext, options: RequesterOpt
             try {
                 return (await response.json());
             } catch (e) {
-                throw new Error(
-                    `${(e as Error).message}
-                \nStatus code: ${response.status()}
-                \nHeaders: ${JSON.stringify(response.headers())}
-                \nResponse body is not a json but: ${await response.text()}`,
-                );
+                throw new Error(await buildMessage(e, response));
             }
         };
 }
@@ -119,4 +110,11 @@ function validateDocument(doc: DocumentNode): void {
     if (definition.operation === subscription) {
         throw new Error('Subscription requests through SDK interface are not supported');
     }
+}
+
+async function buildMessage(e: any, response: APIResponse): Promise<string> {
+    return `${(e as Error).message}
+                \nStatus code: ${response.status()}
+                \nHeaders: ${JSON.stringify(response.headers())}
+                \nResponse body is not a json but: ${await response.text()}`
 }
