@@ -72,7 +72,6 @@ export function getSdkRequester(client: APIRequestContext, options: RequesterOpt
             return json.data;
         }
     :
-
         async <R, V>(
             doc: DocumentNode,
             variables: V,
