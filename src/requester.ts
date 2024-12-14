@@ -22,6 +22,46 @@ const operationDefinition = 'OperationDefinition';
 const subscription = 'subscription';
 const validDocDefOps = ['mutation', 'query', subscription];
 
+const returnRawResponseStrategy = async <R>(
+    response: APIResponse,
+): Promise<R> => {
+    try {
+        return (await response.json());
+    } catch (e) {
+        throw new Error(await buildMessage(e, response));
+    }
+}
+
+const returnDataResponseStrategy = async <R>(
+    response: APIResponse,
+    options?: PlaywrightRequesterOptions,
+): Promise<R> => {
+    let json;
+    try {
+        json = await response.json();
+    } catch (e) {
+        throw new Error(await buildMessage(e, response));
+    }
+
+    if (options?.returnRawJson) {
+        return json;
+    }
+
+    if ([undefined, null].includes(json.data)) {
+        const failOnEmptyData: boolean = options?.failOnEmptyData ?? true;
+
+        if (!failOnEmptyData) {
+            return json;
+        }
+
+        const formattedJsonString = JSON.stringify(JSON.parse(await response.text()), null, '  ');
+
+        throw new Error(`No data presented in the GraphQL response: ${formattedJsonString}`);
+    }
+
+    return json.data;
+}
+
 export function getSdkRequester(client: APIRequestContext, options: RequesterOptions = defaultOptions): Requester<PlaywrightRequesterOptions> {
 
     const requesterOptions = {
@@ -42,11 +82,7 @@ export function getSdkRequester(client: APIRequestContext, options: RequesterOpt
                 data: { variables, query: print(doc) },
             });
 
-            try {
-                return (await response.json());
-            } catch (e) {
-                throw new Error(await buildMessage(e, response));
-            }
+            return returnRawResponseStrategy<R>(response);
         }
     :
         async <R, V>(
@@ -61,30 +97,7 @@ export function getSdkRequester(client: APIRequestContext, options: RequesterOpt
                 data: { variables, query: print(doc) },
             });
 
-            let json;
-            try {
-                json = await response.json();
-            } catch (e) {
-                throw new Error(await buildMessage(e, response));
-            }
-
-            if (options?.returnRawJson) {
-                return json;
-            }
-
-            if ([undefined, null].includes(json.data)) {
-                const failOnEmptyData: boolean = options?.failOnEmptyData ?? true;
-
-                if (!failOnEmptyData) {
-                    return json;
-                }
-
-                const formattedJsonString = JSON.stringify(JSON.parse(await response.text()), null, '  ');
-
-                throw new Error(`No data presented in the GraphQL response: ${formattedJsonString}`);
-            }
-
-            return json.data;
+            return returnDataResponseStrategy<R>(response, options);
         };
 }
 
