@@ -33,6 +33,25 @@ export function getSdkRequester(client: APIRequestContext, options: RequesterOpt
         async <R, V>(
             doc: DocumentNode,
             variables: V,
+            options?: Omit<PostOptionsType, 'data'>,
+        ): Promise<R> => {
+            validateDocument(doc);
+
+            const response = await client.post(requesterOptions.gqlEndpoint, {
+                ...options,
+                data: { variables, query: print(doc) },
+            });
+
+            try {
+                return (await response.json());
+            } catch (e) {
+                throw new Error(await buildMessage(e, response));
+            }
+        }
+    :
+        async <R, V>(
+            doc: DocumentNode,
+            variables: V,
             options?: PlaywrightRequesterOptions,
         ): Promise<R> => {
             validateDocument(doc);
@@ -66,25 +85,6 @@ export function getSdkRequester(client: APIRequestContext, options: RequesterOpt
             }
 
             return json.data;
-        }
-    :
-        async <R, V>(
-            doc: DocumentNode,
-            variables: V,
-            options?: Omit<PostOptionsType, 'data'>,
-        ): Promise<R> => {
-            validateDocument(doc);
-
-            const response = await client.post(requesterOptions.gqlEndpoint, {
-                ...options,
-                data: { variables, query: print(doc) },
-            });
-
-            try {
-                return (await response.json());
-            } catch (e) {
-                throw new Error(await buildMessage(e, response));
-            }
         };
 }
 
