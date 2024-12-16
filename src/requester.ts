@@ -16,6 +16,8 @@ type Requester<C = {}> = <R, V>(doc: DocumentNode, vars?: V, options?: C) => Pro
 
 type RequesterOptions = { gqlEndpoint?: string, rawResponse?: boolean };
 
+type GqlEndpoint = string;
+
 const defaultOptions: Required<RequesterOptions> = { gqlEndpoint: '/api/graphql', rawResponse: false };
 
 const operationDefinition = 'OperationDefinition';
@@ -62,11 +64,11 @@ const returnDataResponseStrategy = async <R>(
     return json.data;
 }
 
-export function getSdkRequester(client: APIRequestContext, options: RequesterOptions = defaultOptions): Requester<PlaywrightRequesterOptions> {
+export function getSdkRequester(client: APIRequestContext, options: RequesterOptions | GqlEndpoint = defaultOptions): Requester<PlaywrightRequesterOptions> {
 
     const requesterOptions = {
         ...defaultOptions,
-        ...options,
+        ...(typeof options === 'string' ? { gqlEndpoint: options } : options)
     };
 
     return requesterOptions.rawResponse ?
