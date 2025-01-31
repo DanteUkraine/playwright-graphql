@@ -1,7 +1,7 @@
 import {
     APIRequestContext,
     APIResponse
-} from 'playwright-core';
+} from '@playwright/test';
 import { print, DocumentNode } from 'graphql';
 import 'json-bigint-patch';
 
@@ -64,7 +64,7 @@ const returnDataResponseStrategy = async <R>(
     return json.data;
 }
 
-export function getSdkRequester(client: APIRequestContext, options: RequesterOptions | GqlEndpoint = defaultOptions): Requester<PlaywrightRequesterOptions> {
+export function getSdkRequester(client: APIRequestContext, options: RequesterOptions | GqlEndpoint = defaultOptions, requestHandler?: (request: () => Promise<APIResponse>) => Promise<APIResponse>): Requester<PlaywrightRequesterOptions> {
 
     const requesterOptions = {
         ...defaultOptions,
@@ -79,10 +79,17 @@ export function getSdkRequester(client: APIRequestContext, options: RequesterOpt
         ): Promise<R> => {
             validateDocument(doc);
 
-            const response = await client.post(requesterOptions.gqlEndpoint, {
+            const request = requestHandler ?
+                requestHandler(() => client.post(requesterOptions.gqlEndpoint, {
                 ...options,
                 data: { variables, query: print(doc) },
-            });
+            })) :
+                client.post(requesterOptions.gqlEndpoint, {
+                    ...options,
+                    data: { variables, query: print(doc) },
+                });
+
+            const response = await request;
 
             return returnRawResponseStrategy<R>(response);
         }
@@ -94,10 +101,17 @@ export function getSdkRequester(client: APIRequestContext, options: RequesterOpt
         ): Promise<R> => {
             validateDocument(doc);
 
-            const response = await client.post(requesterOptions.gqlEndpoint, {
-                ...options,
-                data: { variables, query: print(doc) },
-            });
+            const request = requestHandler ?
+                requestHandler(() => client.post(requesterOptions.gqlEndpoint, {
+                    ...options,
+                    data: { variables, query: print(doc) },
+                })) :
+                client.post(requesterOptions.gqlEndpoint, {
+                    ...options,
+                    data: { variables, query: print(doc) },
+                });
+
+            const response = await request;
 
             return returnDataResponseStrategy<R>(response, options);
         };
