@@ -381,6 +381,11 @@ export default defineConfig({
 
 ```
 
+`process.env.PW_GQL_TEMP_DIR`
+allow to override default temp dir used to store coverage log files. 
+
+Default value `.gql-coverage`
+
 And add coverage logger to gql client:
 
 *fixtures/gql.ts*

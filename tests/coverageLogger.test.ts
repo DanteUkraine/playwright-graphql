@@ -12,7 +12,7 @@ describe('coverageLogger', () => {
     };
 
     beforeEach(() => {
-        jest.clearAllMocks(); // Clear mocks before each test
+        jest.clearAllMocks();
     });
 
     test('should call the original method and return its result', async () => {
