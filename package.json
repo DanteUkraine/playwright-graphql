@@ -21,7 +21,7 @@
     "build": "tsc",
     "clean": "tsc --build --clean",
     "install:deps": "npm install --registry=https://registry.npmjs.org",
-    "test": "PW_GQL_TEMP_DIR=./tests/resources/coverageDir jest"
+    "test": "cross-env PW_GQL_TEMP_DIR=./tests/resources/coverageDir jest"
   },
   "repository": {
     "type": "git",
@@ -53,7 +53,8 @@
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "cross-env": "^7.0.3"
   },
   "peerDependencies": {
     "@playwright/test": ">= 1.44.x"
