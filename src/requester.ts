@@ -18,6 +18,14 @@ type RequesterOptions = { gqlEndpoint?: string, rawResponse?: boolean };
 
 type GqlEndpoint = string;
 
+type RequestOptions = {
+    client: APIRequestContext,
+    gqlEndpoint: string,
+    variables: any,
+    doc: DocumentNode,
+    options?: Omit<PostOptionsType, 'data'>
+};
+
 const defaultOptions: Required<RequesterOptions> = { gqlEndpoint: '/api/graphql', rawResponse: false };
 
 const operationDefinition = 'OperationDefinition';
@@ -64,12 +72,33 @@ const returnDataResponseStrategy = async <R>(
     return json.data;
 }
 
-export function getSdkRequester(client: APIRequestContext, options: RequesterOptions | GqlEndpoint = defaultOptions, requestHandler?: (request: () => Promise<APIResponse>) => Promise<APIResponse>): Requester<PlaywrightRequesterOptions> {
+
+
+function doPostRequest(requestParams: RequestOptions): Promise<APIResponse> {
+    return requestParams.client.post(requestParams.gqlEndpoint, {
+        ...requestParams.options,
+        data: { variables: requestParams.variables, query: print(requestParams.doc) },
+    });
+}
+
+function initRequest(requestHandler?: (request: () => Promise<APIResponse>) => Promise<APIResponse>): (requestParams: RequestOptions) => Promise<APIResponse> {
+    return requestHandler ?
+        (requestParams: RequestOptions) => requestHandler(() => doPostRequest(requestParams)) :
+        (requestParams: RequestOptions) => doPostRequest(requestParams);
+}
+
+export function getSdkRequester(
+    client: APIRequestContext,
+    options: RequesterOptions | GqlEndpoint = defaultOptions,
+    requestHandler?: (request: () => Promise<APIResponse>) => Promise<APIResponse>
+): Requester<PlaywrightRequesterOptions> {
 
     const requesterOptions = {
         ...defaultOptions,
         ...(typeof options === 'string' ? { gqlEndpoint: options } : options)
     };
+
+    const doRequest = initRequest(requestHandler);
 
     return requesterOptions.rawResponse ?
         async <R, V>(
@@ -79,15 +108,7 @@ export function getSdkRequester(client: APIRequestContext, options: RequesterOpt
         ): Promise<R> => {
             validateDocument(doc);
 
-            const request = requestHandler ?
-                requestHandler(() => client.post(requesterOptions.gqlEndpoint, {
-                ...options,
-                data: { variables, query: print(doc) },
-            })) :
-                client.post(requesterOptions.gqlEndpoint, {
-                    ...options,
-                    data: { variables, query: print(doc) },
-                });
+            const request = doRequest({ client, gqlEndpoint: requesterOptions.gqlEndpoint, variables, doc, options });
 
             const response = await request;
 
@@ -101,15 +122,7 @@ export function getSdkRequester(client: APIRequestContext, options: RequesterOpt
         ): Promise<R> => {
             validateDocument(doc);
 
-            const request = requestHandler ?
-                requestHandler(() => client.post(requesterOptions.gqlEndpoint, {
-                    ...options,
-                    data: { variables, query: print(doc) },
-                })) :
-                client.post(requesterOptions.gqlEndpoint, {
-                    ...options,
-                    data: { variables, query: print(doc) },
-                });
+            const request = doRequest({ client, gqlEndpoint: requesterOptions.gqlEndpoint, variables, doc, options });
 
             const response = await request;
 

@@ -1,6 +1,6 @@
 import { test, expect, beforeEach } from '@jest/globals';
-import GraphqlCoverageReport from '../src/reporter/report';
-import { coverageDir } from '../src/reporter/consts';
+import GraphqlCoverageReport from '../src/coverage-reporter/report';
+import { coverageDir } from '../src/coverage-reporter/consts';
 import { resolve } from 'path';
 
 describe('Graphql Coverage Report', () => {

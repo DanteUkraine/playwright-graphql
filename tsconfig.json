@@ -71,6 +71,6 @@
   },
   "include": [
     "src/*",
-    "src/reporter/*"
+    "src/coverage-reporter/*"
   ]
 }

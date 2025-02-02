@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { coverageLogger } from '../src';
-import { coverageDir } from '../src/reporter/consts';
+import { coverageDir } from '../src/coverage-reporter/consts';
 
 jest.mock('fs/promises');
 

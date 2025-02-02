@@ -12,9 +12,9 @@
       "require": "./lib/index.js",
       "import": "./lib/index.d.ts"
     },
-    "./reporter": {
-      "require": "./lib/reporter/index.js",
-      "import": "./lib/reporter/index.d.ts"
+    "./coveragereporter": {
+      "require": "./lib/coverage-reporter/index.js",
+      "import": "./lib/coverage-reporter/index.d.ts"
     }
   },
   "scripts": {

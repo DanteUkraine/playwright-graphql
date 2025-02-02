@@ -1,6 +1,6 @@
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
-import { coverageDir } from './reporter/consts';
+import { coverageDir } from './consts';
 
 export function coverageLogger<T extends object>(obj: T): T {
     return new Proxy(obj, {
