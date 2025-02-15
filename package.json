@@ -1,6 +1,6 @@
 {
   "name": "playwright-graphql",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "This library provide playwright integration with graphql for efficient API tests.",
   "main": "lib/requester.js",
   "typings": "lib/requester.d.ts",
