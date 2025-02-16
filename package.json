@@ -1,6 +1,6 @@
 {
   "name": "playwright-graphql",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "This library provide playwright integration with graphql for efficient API tests.",
   "main": "lib/requester.js",
   "typings": "lib/requester.d.ts",
@@ -36,7 +36,7 @@
   "bugs": {
     "url": "https://github.com/DanteUkraine/playwright-graphql/issues"
   },
-  "homepage": "https://github.com/DanteUkraine/playwright-graphql#readme",
+  "homepage": "https://danteukraine.github.io/playwright-graphql",
   "dependencies": {
     "@graphql-codegen/cli": "5.0.3",
     "@graphql-codegen/typescript": "4.1.2",
