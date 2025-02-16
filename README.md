@@ -10,7 +10,7 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 - 🔍 Flexible request handling and response management
 - 📈 Optional GraphQL coverage reporting
 
-To build the GraphQL client, this library leverages several GraphQL generators, such as:
+To build the GraphQL client, this library leverages several GraphQL libraries, such as:
 
 - [get-graphql-schema](https://www.npmjs.com/package/get-graphql-schema) to generate schema.
 - [gql-generator](https://www.npmjs.com/package/gql-generator) to generate operations (queries and mutations).
