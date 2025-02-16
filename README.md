@@ -124,7 +124,7 @@ Finally, run the following command to generate your TypeScript types:
 
 - `graphql-codegen --config codegen.ts` generates graphql.ts in gql directory. 
 
-This command creates the gql/graphql.ts file with all the types for your GraphQL queries and mutations, 
+This command creates the `gql/graphql.ts` file with all the types for your GraphQL queries and mutations, 
 ensuring a type-safe development experience
 
 In case you need to customize output check [docs](https://the-guild.dev/graphql/codegen/plugins/typescript/typescript).
