@@ -71,6 +71,7 @@
   },
   "include": [
     "src/*",
-    "src/coverage-reporter/*"
+    "src/coverage-reporter/*",
+    "src/codegen-cli/*"
   ]
 }
