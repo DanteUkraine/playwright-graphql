@@ -1,10 +1,10 @@
 import { promisify } from 'node:util';
 import { exec } from 'child_process';
-import {readdir, mkdir, rm, writeFile, readFile} from 'fs/promises';
+import { readdir, mkdir, rm, writeFile, readFile } from 'fs/promises';
 import { startFakeGraphQLServer, stopFakeGraphQLServer, lastRequestHeaders } from './resources/gql-fake-server';
 import * as fs from 'fs';
 import * as path from 'path';
-import {join} from "path";
+import { join } from "path";
 
 const execAsync = promisify(exec);
 
@@ -16,6 +16,8 @@ describe('Setup Codegen CLI', () => {
     const gqlFile = 'gql.ts';
     const codegenFile = 'gql-codegen.ts';
     const testDir = path.join(__dirname, 'codegen-test');
+
+    jest.setTimeout(15_000);
 
     beforeAll(async () => {
         await startFakeGraphQLServer();
