@@ -20,10 +20,12 @@ It accepts a Codegen configuration file as input and generates a TypeScript file
 
 - [Project Setup](#project-setup)
 - [Installation](#installation)
-- [Generate graphql schema](#generate-graphql-schema-from-server-under-test)
-- [Generate operations from schema](#generate-operations-from-schema)
-- [Create codegen.ts file](#create-codegen-file)
-- [Type Generation](#generate-types)
+- []
+- [Code generation](#manual-code-generation)
+  - [Generate graphql schema](#generate-graphql-schema-from-server-under-test)
+  - [Generate operations from schema](#generate-operations-from-schema)
+  - [Create codegen.ts file](#create-codegen-file)
+  - [Type Generation](#generate-types)
 - [Add path to your tsconfig](#add-path-to-your-tsconfig)
 - [Create gql fixtures](#create-gql-fixture)
 - [More Features](#advanced-features)
@@ -57,6 +59,27 @@ offering autocomplete and type safety for your API tests.
 or for dev dependency
 - `npm install -D playwright-graphql`
 
+## Code generation with build in CLI
+
+Designed for common workflow.
+
+- `playwright-graphql --url http://localhost:4000/api/graphql --schema schema.gql`
+
+### CLI Options
+The CLI tool accepts several options to customize its behavior. 
+Below is a summary of the available command-line parameters:
+
+| Option      | Alias | Description                                                                                                                                                                | Type   | Default     |
+|-------------|-------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|-------------|
+| `--url`     | `-u`  | Full GraphQL endpoint URL used for schema retrieval. In case this option is not passed, script will skip schema generation and will look for schema to perform next steps. | string | *optional*  |
+| `--schema`  | `-s`  | Path to save the generated GraphQL schema file. In case url option was not provided script will expect that schema already exists.                                         | string | `schema.gql` |
+| `--header`  | `-h`  | Optional authentication headers. Can be passed multiple times.                                                                                                             | array  | *optional*  |
+
+
+## Code generation with original code generators
+
+Allows advance configuration of your project.
+
 ### Generate graphql schema from server under test
 
 Generating your GraphQL schema is an optional but useful step when your system under test (SUT) 
@@ -74,9 +97,7 @@ In case you need to pass Auth headers:
 - `get-graphql-schema https://${baseUrl}/api/graphql > schema.gql -h "Authentication=Bearer ${your_token}"`
 
 In case your Auth header is inside Cookies:
-- `get-graphql-schema https://${baseUrl}/api/graphql > schema.gql -h "Cookie={Authentication: Bearer ${your_token}}"`
-
-Such way is used because `get-graphql-schema` puts value in `JSON.parse` function.
+- `get-graphql-schema https://${baseUrl}/api/graphql > schema.gql -h "Cookie={'Authentication':'Bearer ${your_token}'}"`
 
 ### Generate operations from schema
 
