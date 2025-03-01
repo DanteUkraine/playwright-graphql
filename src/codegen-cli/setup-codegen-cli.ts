@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { runCommand } from './run-command';
 import * as fs from 'fs';
 import { writeFile, readFile } from 'fs/promises';
