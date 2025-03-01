@@ -1,6 +1,6 @@
 {
   "name": "playwright-graphql",
-  "version": "1.2.0-beta.5",
+  "version": "1.2.0-beta.6",
   "description": "This library provide playwright integration with graphql for efficient API tests.",
   "main": "lib/requester.js",
   "typings": "lib/requester.d.ts",
@@ -10,11 +10,13 @@
   "exports": {
     ".": {
       "require": "./lib/index.js",
-      "import": "./lib/index.d.ts"
+      "import": "./lib/index.js",
+      "types": "./lib/index.d.ts"
     },
     "./coverage-reporter": {
       "require": "./lib/coverage-reporter/index.js",
-      "import": "./lib/coverage-reporter/index.d.ts"
+      "import": "./lib/coverage-reporter/index.js",
+      "types": "./lib/coverage-reporter/index.d.ts"
     }
   },
   "bin": {
