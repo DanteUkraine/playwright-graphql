@@ -1,7 +1,7 @@
 import {
     APIRequestContext,
     APIResponse
-} from '@playwright/test';
+} from 'playwright-core';
 import { print, DocumentNode } from 'graphql';
 import 'json-bigint-patch';
 

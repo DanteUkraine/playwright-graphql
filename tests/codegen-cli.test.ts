@@ -75,7 +75,7 @@ describe('Setup Codegen CLI', () => {
         });
     });
 
-    test('generates types from existing schema', async () => {
+    test('generates types from existing schema and adds coverage logger to client', async () => {
         const schemaFile = 'existing-schema.gql';
         const schemaContext = `
             type Query {
@@ -84,7 +84,7 @@ describe('Setup Codegen CLI', () => {
         `;
         await writeFile(path.join(testDir, schemaFile), schemaContext);
 
-        const cliLogs = await execAsync(`node ${cliPath} -s ${schemaFile}`, {
+        const cliLogs = await execAsync(`node ${cliPath} -s ${schemaFile} --coverage`, {
             cwd: testDir,
         });
 
@@ -214,5 +214,39 @@ describe('Setup Codegen CLI', () => {
                     'Exit with no generated output.\n',
             stderr: ''
         });
+    });
+
+    test('generated type script should contain modification', async () => {
+        await execAsync(
+            `node ${cliPath} --url ${stabServer} --schema ${schemaFile} --gqlDir ${gqlDirectory} --gqlFile ${gqlFile} --codegen ${codegenFile}`,
+            { cwd: testDir }
+        );
+
+        const dir = await readdir(testDir, { withFileTypes: true });
+        expect(dir.map(i => i.name ).sort()).toEqual([ schemaFile, gqlDirectory, codegenFile ].sort());
+
+        const generatedFile = fs.readFileSync(join(testDir, gqlDirectory, gqlFile), 'utf8');
+        expect(generatedFile).toContain(`import { getSdkRequester } from 'playwright-graphql';`);
+        expect(generatedFile).toContain(`export type APIRequestContext = Parameters<typeof getSdkRequester>[0];`);
+        expect(generatedFile).toContain(`export type RequesterOptions = Parameters<typeof getSdkRequester>[1] | string;`);
+        expect(generatedFile).toContain(`export type RequestHandler = Parameters<typeof getSdkRequester>[2];`);
+        expect(generatedFile).toContain(`export const getClient = (apiContext: APIRequestContext, options?: RequesterOptions, requestHandler?: RequestHandler) => getSdk(getSdkRequester(apiContext, options, requestHandler));`);
+    });
+
+    test('generated type script should contain modification with coverage logger', async () => {
+        await execAsync(
+            `node ${cliPath} --url ${stabServer} --schema ${schemaFile} --gqlDir ${gqlDirectory} --gqlFile ${gqlFile} --codegen ${codegenFile} --coverage`,
+            { cwd: testDir }
+        );
+
+        const dir = await readdir(testDir, { withFileTypes: true });
+        expect(dir.map(i => i.name ).sort()).toEqual([ schemaFile, gqlDirectory, codegenFile ].sort());
+
+        const generatedFile = fs.readFileSync(join(testDir, gqlDirectory, gqlFile), 'utf8');
+        expect(generatedFile).toContain(`import { getSdkRequester, coverageLogger } from 'playwright-graphql';`);
+        expect(generatedFile).toContain(`export type APIRequestContext = Parameters<typeof getSdkRequester>[0];`);
+        expect(generatedFile).toContain(`export type RequesterOptions = Parameters<typeof getSdkRequester>[1] | string;`);
+        expect(generatedFile).toContain(`export type RequestHandler = Parameters<typeof getSdkRequester>[2];`);
+        expect(generatedFile).toContain(`export const getClient = (apiContext: APIRequestContext, options?: RequesterOptions, requestHandler?: RequestHandler) => coverageLogger(getSdk(getSdkRequester(apiContext, options, requestHandler)));`);
     });
 });
