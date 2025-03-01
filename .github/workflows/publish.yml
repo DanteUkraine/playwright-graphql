@@ -7,7 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v3
         with:
           node-version: '16.x'
@@ -16,7 +15,21 @@ jobs:
         run: npm ci
       - name: Build lib
         run: npm run build
-      - name: Publish
+      - name: Determine version type
+        id: version_type
+        run: |
+          if [[ ${{ github.event.release.tag_name }} == *"-beta"* ]]; then
+            echo "::set-output name=is_beta::true"
+          else
+            echo "::set-output name=is_beta::false"
+          fi
+      - name: Publish beta version
+        if: steps.version_type.outputs.is_beta == 'true'
+        run: npm publish --tag beta
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish stable version
+        if: steps.version_type.outputs.is_beta == 'false'
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
