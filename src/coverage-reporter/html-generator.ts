@@ -1,6 +1,6 @@
 import { Summary } from './report';
 import { OperationSchema } from './types';
-import { buildParamCoverageString } from './coverageCalculationHelpers';
+import { buildParamCoverageString } from './coverage-calculation-helpers';
 
 export function generateHtmlReport(summary: Summary, operationsSchema: OperationSchema[]): string {
     return `

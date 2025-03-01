@@ -1,8 +1,8 @@
 import type { Reporter } from '@playwright/test/reporter';
 import { existsSync } from 'fs';
 import { access, rm, writeFile, mkdir, readdir, readFile } from 'fs/promises';
-import { generateHtmlReport } from './htmlGenerator';
-import { extractOperationsInputParamsSchema } from './gqlClientParser';
+import { generateHtmlReport } from './html-generator';
+import { extractOperationsInputParamsSchema } from './gql-client-parser';
 import { join, resolve } from 'path';
 import { coverageDir } from './consts';
 import { OperationSchema } from './types';
@@ -12,7 +12,7 @@ import {
   buildParamCoverageString,
   calculateTotalArgsCoverage,
   floorDecimal
-} from './coverageCalculationHelpers';
+} from './coverage-calculation-helpers';
 
 function isFileExists(path: string): Promise<boolean> {
   return access(path).then(() => true, () => false);

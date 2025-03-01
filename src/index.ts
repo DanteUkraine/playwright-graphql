@@ -1,2 +1,2 @@
 export { getSdkRequester } from './requester';
-export { coverageLogger } from './coverageLogger';
+export { coverageLogger } from './coverage-logger';
