@@ -243,10 +243,10 @@ describe('Setup Codegen CLI', () => {
         expect(dir.map(i => i.name ).sort()).toEqual([ schemaFile, gqlDirectory, codegenFile ].sort());
 
         const generatedFile = fs.readFileSync(join(testDir, gqlDirectory, gqlFile), 'utf8');
-        expect(generatedFile).toContain(`import { getSdkRequester, coverageLogger } from 'playwright-graphql';`);
+        expect(generatedFile).toContain(`import { getSdkRequester, coverage } from 'playwright-graphql';`);
         expect(generatedFile).toContain(`export type APIRequestContext = Parameters<typeof getSdkRequester>[0];`);
         expect(generatedFile).toContain(`export type RequesterOptions = Parameters<typeof getSdkRequester>[1] | string;`);
         expect(generatedFile).toContain(`export type RequestHandler = Parameters<typeof getSdkRequester>[2];`);
-        expect(generatedFile).toContain(`export const getClient = (apiContext: APIRequestContext, options?: RequesterOptions, requestHandler?: RequestHandler) => coverageLogger(getSdk(getSdkRequester(apiContext, options, requestHandler)));`);
+        expect(generatedFile).toContain(`export const getClient = (apiContext: APIRequestContext, options?: RequesterOptions, requestHandler?: RequestHandler) => coverage(getSdk(getSdkRequester(apiContext, options, requestHandler)));`);
     });
 });

@@ -4,7 +4,7 @@ import { coverageDir } from '../src/coverage-reporter/consts';
 
 jest.mock('fs/promises');
 
-describe('coverageLogger', () => {
+describe('Coverage logger', () => {
     const mockObject = {
         async testMethod(param1: string, param2: number) {
             return `Result: ${param1}, ${param2}`;
