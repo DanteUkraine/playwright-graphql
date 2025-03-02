@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { coverage } from '../src';
+import { coverageLogger } from '../src';
 import { coverageDir } from '../src/coverage-reporter/consts';
 
 jest.mock('fs/promises');
@@ -16,7 +16,7 @@ describe('Coverage logger', () => {
     });
 
     test('should call the original method and return its result', async () => {
-        const proxiedObject = coverage(mockObject);
+        const proxiedObject = coverageLogger(mockObject);
 
         const result = await proxiedObject.testMethod('test', 42);
 
@@ -24,7 +24,7 @@ describe('Coverage logger', () => {
     });
 
     test('should log coverage to the correct file', async () => {
-        const proxiedObject = coverage(mockObject);
+        const proxiedObject = coverageLogger(mockObject);
 
         const writeFileMock = jest.spyOn(require('fs/promises'), 'writeFile').mockResolvedValue(undefined);
 
@@ -37,7 +37,7 @@ describe('Coverage logger', () => {
     });
 
     test('should ensure logging happens before returning the result', async () => {
-        const proxiedObject = coverage(mockObject);
+        const proxiedObject = coverageLogger(mockObject);
 
         const writeFileMock = jest.spyOn(require('fs/promises'), 'writeFile').mockImplementation(async () => {
             return new Promise((resolve) => setTimeout(resolve, 100));
@@ -54,7 +54,7 @@ describe('Coverage logger', () => {
 
     test('should not log coverage for non-function properties', () => {
         const objWithProperties = { value: 42 };
-        const proxiedObjWithProperties = coverage(objWithProperties);
+        const proxiedObjWithProperties = coverageLogger(objWithProperties);
 
         expect(proxiedObjWithProperties.value).toBe(42);
     });

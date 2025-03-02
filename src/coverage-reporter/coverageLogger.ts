@@ -1,8 +1,8 @@
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
-import { coverageDir } from './coverage-reporter/consts';
+import { coverageDir } from './consts';
 
-export const coverage = <T extends object>(obj: T): T => {
+export function coverageLogger<T extends object>(obj: T): T {
     return new Proxy(obj, {
         get(target: T, prop: string) {
             const originalMethod = (target as any)[prop];

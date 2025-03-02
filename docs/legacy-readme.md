@@ -492,11 +492,11 @@ For example, in your fixtures file (e.g. fixtures/gql.ts):
 *fixtures/gql.ts*
 ```ts
 import { test as baseTest, expect, request, APIRequestContext } from '@playwright/test';
-import { getSdkRequester, coverage } from 'playwright-graphql';
+import { getSdkRequester, coverageLogger } from 'playwright-graphql';
 import { getSdk } from '@gql';
 
 
-const getClient = (apiContext: APIRequestContext) => coverage(getSdk(getSdkRequester(apiContext)));
+const getClient = (apiContext: APIRequestContext) => coverageLogger(getSdk(getSdkRequester(apiContext)));
 ```
 
 Template project: https://github.com/DanteUkraine/playwright-graphql-example

@@ -2,7 +2,7 @@ import { promisify } from 'node:util';
 import { exec } from 'child_process';
 import { readdir, mkdir, rm, writeFile, readFile } from 'fs/promises';
 import { startFakeGraphQLServer, stopFakeGraphQLServer, lastRequestHeaders } from './resources/gql-fake-server';
-import * as fs from 'fs';
+import { existsSync } from 'fs';
 import * as path from 'path';
 import { join } from "path";
 
@@ -32,7 +32,7 @@ describe('Setup Codegen CLI', () => {
     });
 
     afterEach(async () => {
-        if (fs.existsSync(testDir)) {
+        if (existsSync(testDir)) {
             await rm(testDir, { recursive: true, force: true });
         }
     });
@@ -114,7 +114,7 @@ describe('Setup Codegen CLI', () => {
         expect(dir.map(i => i.name ).sort())
             .toEqual([ schemaFile, updatedSchemaFile, 'gql', 'codegen.ts' ].sort());
 
-        const updatedConfig = fs.readFileSync(path.join(testDir, 'codegen.ts'), 'utf8');
+        const updatedConfig = await readFile(path.join(testDir, 'codegen.ts'), 'utf8');
         expect(updatedConfig).toContain(`schema: '${updatedSchemaFile}'`);
 
         expect(cliLogs).toEqual({
@@ -139,7 +139,7 @@ describe('Setup Codegen CLI', () => {
         expect(dir.map(i => i.name ).sort())
             .toEqual([ schemaFile, 'gql', 'codegen.ts' ].sort());
 
-        const updatedConfig = fs.readFileSync(path.join(testDir, 'codegen.ts'), 'utf8');
+        const updatedConfig = await readFile(path.join(testDir, 'codegen.ts'), 'utf8');
         expect(updatedConfig).toContain(`schema: '${schemaFile}'`);
 
         expect(cliLogs).toEqual({
@@ -225,7 +225,7 @@ describe('Setup Codegen CLI', () => {
         const dir = await readdir(testDir, { withFileTypes: true });
         expect(dir.map(i => i.name ).sort()).toEqual([ schemaFile, gqlDirectory, codegenFile ].sort());
 
-        const generatedFile = fs.readFileSync(join(testDir, gqlDirectory, gqlFile), 'utf8');
+        const generatedFile = await readFile(join(testDir, gqlDirectory, gqlFile), 'utf8');
         expect(generatedFile).toContain(`import { getSdkRequester } from 'playwright-graphql';`);
         expect(generatedFile).toContain(`export type APIRequestContext = Parameters<typeof getSdkRequester>[0];`);
         expect(generatedFile).toContain(`export type RequesterOptions = Parameters<typeof getSdkRequester>[1] | string;`);
@@ -242,11 +242,11 @@ describe('Setup Codegen CLI', () => {
         const dir = await readdir(testDir, { withFileTypes: true });
         expect(dir.map(i => i.name ).sort()).toEqual([ schemaFile, gqlDirectory, codegenFile ].sort());
 
-        const generatedFile = fs.readFileSync(join(testDir, gqlDirectory, gqlFile), 'utf8');
-        expect(generatedFile).toContain(`import { getSdkRequester, coverage } from 'playwright-graphql';`);
+        const generatedFile = await readFile(join(testDir, gqlDirectory, gqlFile), 'utf8');
+        expect(generatedFile).toContain(`import { getSdkRequester, coverageLogger } from 'playwright-graphql';`);
         expect(generatedFile).toContain(`export type APIRequestContext = Parameters<typeof getSdkRequester>[0];`);
         expect(generatedFile).toContain(`export type RequesterOptions = Parameters<typeof getSdkRequester>[1] | string;`);
         expect(generatedFile).toContain(`export type RequestHandler = Parameters<typeof getSdkRequester>[2];`);
-        expect(generatedFile).toContain(`export const getClient = (apiContext: APIRequestContext, options?: RequesterOptions, requestHandler?: RequestHandler) => coverage(getSdk(getSdkRequester(apiContext, options, requestHandler)));`);
+        expect(generatedFile).toContain(`export const getClient = (apiContext: APIRequestContext, options?: RequesterOptions, requestHandler?: RequestHandler) => coverageLogger(getSdk(getSdkRequester(apiContext, options, requestHandler)));`);
     });
 });
