@@ -6,6 +6,32 @@ import { writeFile, readFile } from 'fs/promises';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
+export const codegenContent = (schema: string, document: string, gqlFile: string, rawRequest: boolean) => `
+import type { CodegenConfig } from '@graphql-codegen/cli';
+
+const config: CodegenConfig = {
+  overwrite: true,
+  schema: '${schema}',
+  documents: [
+    '${document}',
+  ],
+  generates: {
+    '${gqlFile}': {
+      plugins: ['typescript', 'typescript-operations', 'typescript-generic-sdk'],
+      config: {
+        rawRequest: ${rawRequest},
+        scalars: {
+          BigInt: 'bigint|number',
+          Date: 'string',
+        },
+      },
+    },
+  },
+};
+        
+export default config;
+`;
+
 async function main() {
     const argv = await yargs(hideBin(process.argv))
         .option('url', {
@@ -115,33 +141,7 @@ async function main() {
             return;
         }
     } else {
-        const codegenContent = `
-import type { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  overwrite: true,
-  schema: '${argv.schema}',
-  documents: [
-    '${codegenDefaultDocument}',
-  ],
-  generates: {
-    '${codegenGqlFile}': {
-      plugins: ['typescript', 'typescript-operations', 'typescript-generic-sdk'],
-      config: {
-      rawRequest: ${argv.raw},
-        scalars: {
-          BigInt: 'bigint|number',
-          Date: 'string',
-        },
-      },
-    },
-  },
-};
-        
-export default config;
-`;
-
-        await writeFile(argv.codegen, codegenContent, 'utf8');
+        await writeFile(argv.codegen, codegenContent(argv.schema, codegenDefaultDocument, codegenGqlFile, argv.raw), 'utf8');
 
         console.log(`File "${argv.codegen}" generated.`);
     }
