@@ -266,6 +266,12 @@ Schema generation with authentication:
 
 - `playwright-graphql --url http://localhost:4000/api/graphql --header "Authorization: Bearer token"`
 
+Syntax for complex headers:
+- `playwright-graphql --url http://localhost:4000/api/graphql -h "Cookies={'Authorization': 'Bearer token'}"`
+  
+_Keep in mind that you can use multiple headers in single command._
+
+
 Custom paths for generated files:
 
 - `playwright-graphql --url http://localhost:4000/api/graphql --gqlDir src/graphql --gqlFile operations.ts`
@@ -285,15 +291,18 @@ This command fetches the GraphQL schema from your endpoint and generates the nec
 The CLI tool accepts several options to customize its behavior.
 Below is a summary of the available command-line parameters:
 
-| Option      | Alias | Description                                                                                                                                                                | Type    | Default      |
-|-------------|-------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|--------------|
-| `--url`     | `-u`  | Full GraphQL endpoint URL used for schema retrieval. In case this option is not passed, the script will skip schema generation and will look for an existing schema.       | string  | *optional*   |
-| `--schema`  | `-s`  | Path to save the generated GraphQL schema file. If the URL option is not provided, the script expects that the schema already exists.                                      | string  | `schema.gql` |
-| `--header`  | `-h`  | Optional authentication header(s) for schema fetching. Can be passed multiple times.                                                                                       | array   | *optional*   |
-| `--gqlDir`  | `-d`  | Path to save the auto-generated GraphQL files.                                                                                                                             | string  | `gql`        |
-| `--gqlFile` | `-f`  | Path to save the auto-generated GraphQL queries, mutations, and TypeScript types.                                                                                          | string  | `graphql.ts` |
-| `--codegen` | `-c`  | Path to save the codegen config for TypeScript types.                                                                                                                      | string  | `codegen.ts` |
-| `--coverage`|       | Flag to add coverage logger to auto-generated client.                                                                                                                      | boolean | *optional*   |
+| Option       | Alias | Description                                                                                                                                                          | Type    | Default      |
+|--------------|-------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|--------------|
+| `--url`      | `-u`  | Full GraphQL endpoint URL used for schema retrieval. In case this option is not passed, the script will skip schema generation and will look for an existing schema. | string  | *optional*   |
+| `--schema`   | `-s`  | Path to save the generated GraphQL schema file. If the URL option is not provided, the script expects that the schema already exists.                                | string  | `schema.gql` |
+| `--header`   | `-h`  | Optional authentication header(s) for schema fetching. Can be passed multiple times.                                                                                 | array   | *optional*   |
+| `--gqlDir`   | `-d`  | Path to save the auto-generated GraphQL files.                                                                                                                       | string  | `gql`        |
+| `--gqlFile`  | `-f`  | Path to save the auto-generated GraphQL queries, mutations, and TypeScript types.                                                                                    | string  | `graphql.ts` |
+| `--raw`      |       | Makes Graphql api return raw responses.                                                                                                                              | boolean | false        |
+| `--codegen`  | `-c`  | Path to save the codegen config for TypeScript types.                                                                                                                | string  | `codegen.ts` |
+| `--coverage` |       | Flag to add coverage logger to auto-generated client.                                                                                                                | boolean | false        |
+| `--version`  |       | Print version.                                                                                                                                                       |         |              |
+| `--help`     |       | Print all CLI options.                                                                                                                                               |         |              |
 
 
 ### Code generation with original code generators

@@ -42,10 +42,17 @@ async function main() {
             type: 'string',
             default: 'codegen.ts',
         })
+        .option('raw', {
+            describe: 'Path to save the auto generated GraphQL queries and mutations and type script types.',
+            type: 'boolean',
+            default: false
+        })
         .option('coverage', {
             describe: 'Will add coverage logger to auto-generated client.',
             type: 'boolean',
+            default: false
         })
+        .version()
         .help()
         .argv;
 
@@ -121,6 +128,7 @@ const config: CodegenConfig = {
     '${codegenGqlFile}': {
       plugins: ['typescript', 'typescript-operations', 'typescript-generic-sdk'],
       config: {
+      rawRequest: ${argv.raw},
         scalars: {
           BigInt: 'bigint|number',
           Date: 'string',

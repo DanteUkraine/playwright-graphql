@@ -45,6 +45,12 @@ describe('Setup Codegen CLI', () => {
 
         const dir = await readdir(testDir, { withFileTypes: true });
         expect(dir.map(i => i.name ).sort()).toEqual([ schemaFile, gqlDirectory, codegenFile ].sort());
+
+        const codegenContent = await readFile(join(testDir, codegenFile), 'utf8');
+        expect(codegenContent).toMatch(new RegExp(`\\sschema:\\s'${schemaFile}',`));
+        expect(codegenContent).toMatch(new RegExp(`\\s'${gqlDirectory}\/${gqlFile}':`));
+        expect(codegenContent).toMatch(new RegExp(`\\srawRequest:\\sfalse,`));
+
         expect(lastRequestHeaders).not.toHaveProperty('authorization');
 
         expect(cliLogs).toEqual({
@@ -218,12 +224,17 @@ describe('Setup Codegen CLI', () => {
 
     test('generated type script should contain modification', async () => {
         await execAsync(
-            `node ${cliPath} --url ${stabServer} --schema ${schemaFile} --gqlDir ${gqlDirectory} --gqlFile ${gqlFile} --codegen ${codegenFile}`,
+            `node ${cliPath} --url ${stabServer} --schema ${schemaFile} --gqlDir ${gqlDirectory} --gqlFile ${gqlFile} --raw --codegen ${codegenFile}`,
             { cwd: testDir }
         );
 
         const dir = await readdir(testDir, { withFileTypes: true });
         expect(dir.map(i => i.name ).sort()).toEqual([ schemaFile, gqlDirectory, codegenFile ].sort());
+
+        const codegenContent = await readFile(join(testDir, codegenFile), 'utf8');
+        expect(codegenContent).toMatch(new RegExp(`\\sschema:\\s'${schemaFile}',`));
+        expect(codegenContent).toMatch(new RegExp(`\\s'${gqlDirectory}\/${gqlFile}':`));
+        expect(codegenContent).toMatch(new RegExp(`\\srawRequest:\\strue,`));
 
         const generatedFile = await readFile(join(testDir, gqlDirectory, gqlFile), 'utf8');
         expect(generatedFile).toContain(`import { getSdkRequester } from 'playwright-graphql';`);
@@ -249,4 +260,5 @@ describe('Setup Codegen CLI', () => {
         expect(generatedFile).toContain(`export type RequestHandler = Parameters<typeof getSdkRequester>[2];`);
         expect(generatedFile).toContain(`export const getClient = (apiContext: APIRequestContext, options?: RequesterOptions, requestHandler?: RequestHandler) => coverageLogger(getSdk(getSdkRequester(apiContext, options, requestHandler)));`);
     });
+
 });
