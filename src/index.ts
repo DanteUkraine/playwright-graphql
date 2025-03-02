@@ -1,4 +1,2 @@
-import { getSdkRequester } from './requester';
-import { coverageLogger } from './coverage-logger';
-
-export { getSdkRequester, coverageLogger };
+export { getSdkRequester } from './requester';
+export { coverage } from './coverage';

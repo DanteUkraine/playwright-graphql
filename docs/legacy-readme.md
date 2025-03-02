@@ -486,17 +486,17 @@ By default, the coverage logs are saved in a directory named `.gql-coverage`.
 
 ### Integrating the Coverage Logger into Your GraphQL Client
 
-To enable coverage tracking for your GraphQL requests, wrap your SDK with the coverageLogger in the GraphQL fixture.
+To enable coverage tracking for your GraphQL requests, wrap your SDK with the coverage in the GraphQL fixture.
 For example, in your fixtures file (e.g. fixtures/gql.ts):
 
 *fixtures/gql.ts*
 ```ts
 import { test as baseTest, expect, request, APIRequestContext } from '@playwright/test';
-import { getSdkRequester, coverageLogger } from 'playwright-graphql';
+import { getSdkRequester, coverage } from 'playwright-graphql';
 import { getSdk } from '@gql';
 
 
-const getClient = (apiContext: APIRequestContext) => coverageLogger(getSdk(getSdkRequester(apiContext)));
+const getClient = (apiContext: APIRequestContext) => coverage(getSdk(getSdkRequester(apiContext)));
 ```
 
 Template project: https://github.com/DanteUkraine/playwright-graphql-example
