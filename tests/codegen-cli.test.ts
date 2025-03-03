@@ -242,6 +242,7 @@ describe('Setup Codegen CLI', () => {
         expect(generatedFile).toContain(`export type RequesterOptions = Parameters<typeof getSdkRequester>[1] | string;`);
         expect(generatedFile).toContain(`export type RequestHandler = Parameters<typeof getSdkRequester>[2];`);
         expect(generatedFile).toContain(`export const getClient = (apiContext: APIRequestContext, options?: RequesterOptions, requestHandler?: RequestHandler) => getSdk(getSdkRequester(apiContext, options, requestHandler));`);
+        expect(generatedFile).toContain(`export type GqlAPI = ReturnType<typeof getClient>;\n`);
     });
 
     test('generated type script should contain modification with coverage logger', async () => {
@@ -259,6 +260,7 @@ describe('Setup Codegen CLI', () => {
         expect(generatedFile).toContain(`export type RequesterOptions = Parameters<typeof getSdkRequester>[1] | string;`);
         expect(generatedFile).toContain(`export type RequestHandler = Parameters<typeof getSdkRequester>[2];`);
         expect(generatedFile).toContain(`export const getClient = (apiContext: APIRequestContext, options?: RequesterOptions, requestHandler?: RequestHandler) => coverageLogger(getSdk(getSdkRequester(apiContext, options, requestHandler)));`);
+        expect(generatedFile).toContain(`export type GqlAPI = ReturnType<typeof getClient>;\n`);
     });
 
 });
