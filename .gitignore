@@ -136,4 +136,4 @@ lib
 
 # tests
 gql/
-test/codegen-test/
+tests/codegen-test/
