@@ -133,3 +133,7 @@ dist
 .ssh
 lib
 .idea
+
+# tests
+gql/
+test/codegen-test/
