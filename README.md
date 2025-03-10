@@ -40,7 +40,7 @@ playwright-graphql --schema schema.gql
 
 1. Installation.
 2. Generate type safe client.
-3. Add graphql client fixture.
+ 3. Add GraphQL client fixture.
 4. Write GraphQL tests with joy!
 
 Template project: https://github.com/DanteUkraine/playwright-graphql-example
