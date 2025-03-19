@@ -289,7 +289,7 @@ Turn off auto generation of queries and mutations:
 
 - `playwright-graphql --url http://localhost:4000/api/graphql --coverage --introspect false`
 
-_Auto generated codegen.ts file will contain `custom-operations` dir instead._
+_Auto generated `codegen.ts` file will contain `custom-operations` dir instead._
 
 This command fetches the GraphQL schema from your endpoint and generates the necessary files for type-safe GraphQL operations in your Playwright tests.
 
