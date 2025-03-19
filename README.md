@@ -285,6 +285,11 @@ Enabling coverage logging:
 
 - `playwright-graphql --url http://localhost:4000/api/graphql --coverage`
 
+Turn off auto generation of queries and mutations:
+
+- `playwright-graphql --url http://localhost:4000/api/graphql --coverage --introspect false`
+
+_Auto generated `codegen.ts` file will contain `custom-operations` dir instead._
 
 This command fetches the GraphQL schema from your endpoint and generates the necessary files for type-safe GraphQL operations in your Playwright tests.
 
@@ -292,18 +297,19 @@ This command fetches the GraphQL schema from your endpoint and generates the nec
 The CLI tool accepts several options to customize its behavior.
 Below is a summary of the available command-line parameters:
 
-| Option       | Alias | Description                                                                                                                                                          | Type    | Default      |
-|--------------|-------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|--------------|
-| `--url`      | `-u`  | Full GraphQL endpoint URL used for schema retrieval. In case this option is not passed, the script will skip schema generation and will look for an existing schema. | string  | *optional*   |
-| `--schema`   | `-s`  | Path to save the generated GraphQL schema file. If the URL option is not provided, the script expects that the schema already exists.                                | string  | `schema.gql` |
-| `--header`   | `-h`  | Optional authentication header(s) for schema fetching. Can be passed multiple times.                                                                                 | array   | *optional*   |
-| `--gqlDir`   | `-d`  | Path to save the auto-generated GraphQL files.                                                                                                                       | string  | `gql`        |
-| `--gqlFile`  | `-f`  | Path to save the auto-generated GraphQL queries, mutations, and TypeScript types.                                                                                    | string  | `graphql.ts` |
-| `--raw`      |       | Makes Graphql api return raw responses.                                                                                                                              | boolean | false        |
-| `--codegen`  | `-c`  | Path to save the codegen config for TypeScript types.                                                                                                                | string  | `codegen.ts` |
-| `--coverage` |       | Flag to add coverage logger to auto-generated client.                                                                                                                | boolean | false        |
-| `--version`  |       | Print version.                                                                                                                                                       |         |              |
-| `--help`     |       | Print all CLI options.                                                                                                                                               |         |              |
+| Option         | Alias | Description                                                                                                                                                          | Type    | Default      |
+|----------------|-------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|--------------|
+| `--url`        | `-u`  | Full GraphQL endpoint URL used for schema retrieval. In case this option is not passed, the script will skip schema generation and will look for an existing schema. | string  | *optional*   |
+| `--schema`     | `-s`  | Path to save the generated GraphQL schema file. If the URL option is not provided, the script expects that the schema already exists.                                | string  | `schema.gql` |
+| `--header`     | `-h`  | Optional authentication header(s) for schema fetching. Can be passed multiple times.                                                                                 | array   | *optional*   |
+| `--gqlDir`     | `-d`  | Path to save the auto-generated GraphQL files.                                                                                                                       | string  | `gql`        |
+| `--gqlFile`    | `-f`  | Path to save the auto-generated GraphQL queries, mutations, and TypeScript types.                                                                                    | string  | `graphql.ts` |
+| `--raw`        |       | Makes Graphql api return raw responses.                                                                                                                              | boolean | false        |
+| `--codegen`    | `-c`  | Path to save the codegen config for TypeScript types.                                                                                                                | string  | `codegen.ts` |
+| `--introspect` | `-i`  | Omit auto generation of queries and mutation.                                                                                                                        | boolean | true         |
+| `--coverage`   |       | Flag to add coverage logger to auto-generated client.                                                                                                                | boolean | false        |
+| `--version`    |       | Print version.                                                                                                                                                       |         |              |
+| `--help`       |       | Print all CLI options.                                                                                                                                               |         |              |
 
 ### Return raw response body instead of schema defined type.
 
