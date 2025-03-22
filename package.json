@@ -50,6 +50,7 @@
     "get-graphql-schema": "2.1.2",
     "gql-generator": "2.0.0",
     "json-bigint-patch": "^0.0.8",
+    "prettier": "^3.5.3",
     "yargs": "^17.7.2"
   },
   "devDependencies": {

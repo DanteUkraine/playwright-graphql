@@ -137,3 +137,4 @@ lib
 # tests
 gql/
 tests/codegen-test/
+playground/
