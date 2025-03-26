@@ -48,7 +48,7 @@ describe('Graphql Coverage Report', () => {
             { inputParams: [{ called: 0, key: "id", type: "string" }], name: "user" },
             { inputParams: [], name: "users" }]
         );
-        expect(reporter['coverageFilePath']).toEqual('./gql-coverage.log');
+        expect(reporter['coverageFilePath']).toEqual('./raw-graphql-coverage.log');
         expect(reporter['logUncoveredOperations']).toEqual(false);
         expect(reporter['minCoveragePerOperation']).toEqual(100);
         expect(reporter['saveGqlCoverageLog']).toEqual(false);
