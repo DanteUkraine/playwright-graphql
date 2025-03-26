@@ -29,6 +29,7 @@ export type Summary = {
 export default class GraphqlCoverageReport implements Reporter {
 
   private readonly coverageDir: string;
+  private readonly apiClientFileName: string;
   private readonly operationsSchema: OperationSchema[];
   private readonly logUncoveredOperations: boolean = false;
   private readonly coverageFilePath: string;
@@ -51,12 +52,13 @@ export default class GraphqlCoverageReport implements Reporter {
     if (!existsSync(absolutePath)) {
       throw new Error(`Source file '${absolutePath}' does not exist.`);
     }
+    this.apiClientFileName = options.graphqlFilePath.split('/').at(-1) as string;
     this.coverageDir = getPathToTmpCoverageStash(options.graphqlFilePath);
     this.operationsSchema = extractOperationsInputParamsSchema(absolutePath);
     this.logUncoveredOperations = options.logUncoveredOperations ?? false;
     this.minCoveragePerOperation = options.minCoveragePerOperation ?? 100;
-    this.coverageFilePath = options.coverageFilePath ?? './gql-coverage.log';
-    this.htmlFilePath = options.htmlFilePath ?? './gql-coverage.html';
+    this.coverageFilePath = options.coverageFilePath ?? `./${this.apiClientFileName.replace('.ts', '')}-coverage.log`;
+    this.htmlFilePath = options.htmlFilePath ?? `./${this.apiClientFileName.replace('.ts', '')}-coverage.html`;
     this.saveGqlCoverageLog = options.saveGqlCoverageLog ?? false;
     this.saveHtmlSummary = options.saveHtmlSummary ?? false;
   }
@@ -130,18 +132,18 @@ export default class GraphqlCoverageReport implements Reporter {
   }
 
   async onExit(): Promise<void> {
-    console.log('\n'+'='.repeat(170));
+    console.log(`\n=== Coverage for ${this.apiClientFileName} client `+'===');
     console.log(this.summary.coverage);
     console.log(this.summary.coverageTotal);
     console.log(this.summary.covered);
     console.log(this.summary.operationsCoverageSummary);
     if (this.logUncoveredOperations) {
-      console.log('='.repeat(75)+' Uncovered operations '+'='.repeat(75));
+      console.log('==='+' Uncovered operations '+'===');
       console.log(`${this.summary.operationsArgCoverage
           .filter(i => !i.covered)
           .map(({ name, argsCoverage }) => `${name} ${argsCoverage}`)
           .join('\n')}`);
     }
-    console.log('='.repeat(170)+'\n');
+    console.log('============================\n');
   }
 }

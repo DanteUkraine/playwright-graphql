@@ -291,6 +291,8 @@ Below is a summary of the available command-line parameters:
 | `--header`      | `-h`  | Optional authentication header(s) for schema fetching. Can be passed multiple times.                                                                                    | array   | *optional*     |
 | `--gqlDir`      | `-d`  | Path to save the auto-generated GraphQL files.                                                                                                                          | string  | `gql`          |
 | `--gqlFile`     | `-f`  | Path to save the auto-generated GraphQL type-safe client (you will import this into your code).                                                                         | array   | [`graphql.ts`] |
+| `--document`    | `-o`  | Glob pattern(s) that will be added to documents.	                                                                                                                       | array   | *optional*     |
+| `--introspect`  | `-i`  | Turns off auto-generation of operations.                                                                                                                                | boolean | true           |
 | `--raw`         |       | Generates GraphQL client witch return raw responses.                                                                                                                    | boolean | false          |
 | `--codegen`     | `-c`  | Path to save the codegen config.                                                                                                                                        | string  | `codegen.ts`   |
 | `--saveCodegen` |       | Save generated codegen file.                                                                                                                                            | boolean | false          |
@@ -541,12 +543,8 @@ export default defineConfig({
 });
 
 ```
-#### Environment Variable Override
+In case you generate multiple clients each client coverage reporter has to be specified separately.
 
-If you need to change the default temporary directory where coverage log files are stored, 
-set the environment variable `process.env.PW_GQL_TEMP_DIR`. 
-
-By default, the coverage logs are saved in a directory named `.gql-coverage`.
 
 ### Integrating the Coverage Logger into Your GraphQL Client
 
