@@ -1,9 +1,10 @@
 import { test, expect, beforeEach } from '@jest/globals';
 import GraphqlCoverageReport from '../src/coverage-reporter/report';
-import { coverageDir } from '../src/coverage-reporter/consts';
-import { resolve } from 'path';
+import { resolve, join } from 'path';
 
 describe('Graphql Coverage Report', () => {
+
+    const expectedCoverageDir = '.raw-graphql-coverage';
 
     beforeEach(() => {
         jest.restoreAllMocks();
@@ -77,9 +78,9 @@ describe('Graphql Coverage Report', () => {
 
         await reporter.onBegin();
 
-        expect(accessMock).toHaveBeenCalledWith(coverageDir);
-        expect(rmMock).toHaveBeenCalledWith(coverageDir, { recursive: true });
-        expect(mkdirMock).toHaveBeenCalledWith(coverageDir);
+        expect(accessMock).toHaveBeenCalledWith(join(process.cwd(), expectedCoverageDir));
+        expect(rmMock).toHaveBeenCalledWith(join(process.cwd(), expectedCoverageDir), { recursive: true });
+        expect(mkdirMock).toHaveBeenCalledWith(join(process.cwd(), expectedCoverageDir));
     });
 
     test('onBegin should create coverage directory', async () => {
@@ -99,9 +100,9 @@ describe('Graphql Coverage Report', () => {
 
         await reporter.onBegin();
 
-        expect(accessMock).toHaveBeenCalledWith(coverageDir);
-        expect(rmMock).not.toHaveBeenCalledWith(resolve(coverageDir), { recursive: true });
-        expect(mkdirMock).toHaveBeenCalledWith(coverageDir);
+        expect(accessMock).toHaveBeenCalledWith(join(process.cwd(), expectedCoverageDir));
+        expect(rmMock).not.toHaveBeenCalledWith(resolve(expectedCoverageDir), { recursive: true });
+        expect(mkdirMock).toHaveBeenCalledWith(join(process.cwd(), expectedCoverageDir));
     });
 
     test('onEnd should throw error if no coverage dir found', async () => {
@@ -115,7 +116,7 @@ describe('Graphql Coverage Report', () => {
         jest.spyOn(require('fs/promises'), 'access')
             .mockRejectedValue(new Error('ENOENT: no such file or directory'));
 
-        await expect(reporter.onEnd()).rejects.toThrowError(`Directory with logged coverage was not found: ${coverageDir}`);
+        await expect(reporter.onEnd()).rejects.toThrowError(`Directory with logged coverage was not found: ${join(process.cwd(), expectedCoverageDir)}`);
     });
 
     test('onEnd should calculate coverage and write logs', async () => {
@@ -131,12 +132,17 @@ describe('Graphql Coverage Report', () => {
         const writeFileMock = jest.spyOn(require('fs/promises'), 'writeFile')
             .mockResolvedValue(Promise<void>);
 
+        const stabCoverageDir = './tests/resources/coverageDir';
+
         const reporter = new GraphqlCoverageReport(options);
+
+        // @ts-ignore
+        reporter['coverageDir'] = stabCoverageDir;
 
         await reporter.onEnd();
 
         expect(readFileMock).toBeCalledTimes(2);
         expect(writeFileMock).toBeCalledTimes(5);
-        expect(rmMock).toHaveBeenCalledWith(coverageDir, { recursive: true });
+        expect(rmMock).toHaveBeenCalledWith(stabCoverageDir, { recursive: true });
     });
 });

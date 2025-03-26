@@ -4,7 +4,6 @@ import { access, rm, writeFile, mkdir, readdir, readFile } from 'fs/promises';
 import { generateHtmlReport } from './html-generator';
 import { extractOperationsInputParamsSchema } from './gql-client-parser';
 import { join, resolve } from 'path';
-import { coverageDir } from './consts';
 import { OperationSchema } from './types';
 import {
   incrementCountersInOperationSchema,
@@ -13,6 +12,7 @@ import {
   calculateTotalArgsCoverage,
   floorDecimal
 } from './coverage-calculation-helpers';
+import { getPathToTmpCoverageStash } from './coverageStashPath';
 
 function isFileExists(path: string): Promise<boolean> {
   return access(path).then(() => true, () => false);
@@ -28,6 +28,7 @@ export type Summary = {
 
 export default class GraphqlCoverageReport implements Reporter {
 
+  private readonly coverageDir: string;
   private readonly operationsSchema: OperationSchema[];
   private readonly logUncoveredOperations: boolean = false;
   private readonly coverageFilePath: string;
@@ -50,6 +51,7 @@ export default class GraphqlCoverageReport implements Reporter {
     if (!existsSync(absolutePath)) {
       throw new Error(`Source file '${absolutePath}' does not exist.`);
     }
+    this.coverageDir = getPathToTmpCoverageStash(options.graphqlFilePath);
     this.operationsSchema = extractOperationsInputParamsSchema(absolutePath);
     this.logUncoveredOperations = options.logUncoveredOperations ?? false;
     this.minCoveragePerOperation = options.minCoveragePerOperation ?? 100;
@@ -60,17 +62,17 @@ export default class GraphqlCoverageReport implements Reporter {
   }
 
   async onBegin() {
-    if (await isFileExists(coverageDir)) await rm(coverageDir, { recursive: true });
-    await mkdir(coverageDir);
+    if (await isFileExists(this.coverageDir)) await rm(this.coverageDir, { recursive: true });
+    await mkdir(this.coverageDir);
   }
 
   async onEnd() {
-    if (!await isFileExists(coverageDir)) throw new Error(`Directory with logged coverage was not found: ${coverageDir}`);
-    const operationsFiles = await readdir(coverageDir);
+    if (!await isFileExists(this.coverageDir)) throw new Error(`Directory with logged coverage was not found: ${this.coverageDir}`);
+    const operationsFiles = await readdir(this.coverageDir);
 
     const coveredOperationsWithArgs: { name: string, calls: { name: string, inputParams: any[] }[] }[] = await Promise.all(
         operationsFiles.map(async (fileName) => {
-          const operationFile = await readFile(join(coverageDir, fileName), { encoding: 'utf8' });
+          const operationFile = await readFile(join(this.coverageDir, fileName), { encoding: 'utf8' });
           return {
             name: fileName,
             calls: JSON.parse(`[${operationFile.slice(0, -1)}]`), // .slice(0, -1) because last char always will be a comma.
@@ -124,7 +126,7 @@ export default class GraphqlCoverageReport implements Reporter {
       await writeFile(this.htmlFilePath, generateHtmlReport(this.summary, this.operationsSchema));
     }
 
-    await rm(coverageDir, { recursive: true });
+    await rm(this.coverageDir, { recursive: true });
   }
 
   async onExit(): Promise<void> {

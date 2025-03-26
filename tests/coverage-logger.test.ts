@@ -1,6 +1,5 @@
 import { join } from 'path';
 import { coverageLogger } from '../src';
-import { coverageDir } from '../src/coverage-reporter/consts';
 
 jest.mock('fs/promises');
 
@@ -11,12 +10,14 @@ describe('Coverage logger', () => {
         },
     };
 
+    const dirStashPath = 'some-path';
+
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
     test('should call the original method and return its result', async () => {
-        const proxiedObject = coverageLogger(mockObject);
+        const proxiedObject = coverageLogger(mockObject, dirStashPath);
 
         const result = await proxiedObject.testMethod('test', 42);
 
@@ -24,20 +25,20 @@ describe('Coverage logger', () => {
     });
 
     test('should log coverage to the correct file', async () => {
-        const proxiedObject = coverageLogger(mockObject);
+        const proxiedObject = coverageLogger(mockObject, dirStashPath);
 
         const writeFileMock = jest.spyOn(require('fs/promises'), 'writeFile').mockResolvedValue(undefined);
 
         await proxiedObject.testMethod('test', 42);
 
-        const expectedLogPath = join(coverageDir, 'testMethod');
+        const expectedLogPath = join(dirStashPath, 'testMethod');
         const expectedLogContent = `${JSON.stringify({ name: 'testMethod', inputParams: ['test', 42] })},`;
 
         expect(writeFileMock).toHaveBeenCalledWith(expectedLogPath, expectedLogContent, { flag: 'a' });
     });
 
     test('should ensure logging happens before returning the result', async () => {
-        const proxiedObject = coverageLogger(mockObject);
+        const proxiedObject = coverageLogger(mockObject, dirStashPath);
 
         const writeFileMock = jest.spyOn(require('fs/promises'), 'writeFile').mockImplementation(async () => {
             return new Promise((resolve) => setTimeout(resolve, 100));
@@ -54,7 +55,7 @@ describe('Coverage logger', () => {
 
     test('should not log coverage for non-function properties', () => {
         const objWithProperties = { value: 42 };
-        const proxiedObjWithProperties = coverageLogger(objWithProperties);
+        const proxiedObjWithProperties = coverageLogger(objWithProperties, dirStashPath);
 
         expect(proxiedObjWithProperties.value).toBe(42);
     });
