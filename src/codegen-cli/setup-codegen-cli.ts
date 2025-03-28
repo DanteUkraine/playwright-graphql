@@ -1,44 +1,176 @@
 #!/usr/bin/env node
 
 import { runCommand } from './run-command';
-import * as fs from 'fs';
-import { writeFile, readFile, mkdir, readdir } from 'fs/promises';
-import yargs from 'yargs';
+import { existsSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { writeFile, mkdir } from 'fs/promises';
 import { hideBin } from 'yargs/helpers';
+import { generate, loadCodegenConfig, CodegenConfig } from '@graphql-codegen/cli';
+import { getPathToTmpCoverageStash } from '../coverage-reporter/coverageStashPath';
+import yargs from 'yargs';
+import prettier from 'prettier';
 
-function codegenContent(schema: string, document: string, gqlFile: string, rawRequest: boolean){
-    return `import type { CodegenConfig } from '@graphql-codegen/cli';
+export async function configToFile(
+    config: CodegenConfig,
+    outputPath = './codegen.ts'
+): Promise<void> {
+    const configObjectString = inspectConfig(config);
 
-const config: CodegenConfig = {
-  overwrite: true,
-  schema: '${schema}',
-  documents: [
-    '${document}',
-  ],
-  generates: {
-    '${gqlFile}': {
-      plugins: ['typescript', 'typescript-operations', 'typescript-generic-sdk'],
-      config: {
-        rawRequest: ${rawRequest},
-        scalars: {
-          BigInt: 'bigint|number',
-          Date: 'string',
-        },
-      },
-    },
-  },
-};
-        
+    const fileContent = `/**
+ * GraphQL Code Generator Configuration
+ * @see https://the-guild.dev/graphql/codegen/docs/config-reference/codegen-config
+ */
+import type { CodegenConfig } from '@graphql-codegen/cli';
+
+const config: CodegenConfig = ${configObjectString};
+
 export default config;
 `;
-};
+
+    const prettierOptions = await prettier.resolveConfig(process.cwd()) || {};
+    const formattedContent = await prettier.format(fileContent, {
+        ...prettierOptions,
+        parser: 'typescript',
+    });
+
+    const resolvedPath = resolve(outputPath);
+    await mkdir(dirname(resolvedPath), { recursive: true });
+    await writeFile(resolvedPath, formattedContent, 'utf8');
+}
+
+function inspectConfig(obj: any, depth = 0): string {
+    if (depth > 20) return '{/* Depth limit exceeded */}';
+
+    if (obj === null) return 'null';
+    if (obj === undefined) return 'undefined';
+
+    // Handle functions (hooks, custom scalars, etc.)
+    if (typeof obj === 'function') {
+
+        return obj.toString();
+    }
+
+    if (typeof obj !== 'object') {
+
+        return JSON.stringify(obj);
+    }
+
+    if (Array.isArray(obj)) {
+        if (obj.length === 0) return '[]';
+        const items = obj.map(item => inspectConfig(item, depth + 1));
+
+        return `[${items.join(', ')}]`;
+    }
+
+    if (Object.keys(obj).length === 0) return '{}';
+
+    const entries = Object.entries(obj).map(([key, value]) => {
+        const formattedKey = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)
+            ? key
+            : JSON.stringify(key);
+
+        return `${formattedKey}: ${inspectConfig(value, depth + 1)}`;
+    });
+
+    return `{
+  ${entries.join(',\n  ')}
+}`;
+}
+
+function buildCodegenConfig(
+    schemas: string[],
+    documents: string[][],
+    gqlClients: string[],
+    rawRequest: boolean,
+): CodegenConfig {
+    const config = {
+        generates: gqlClients.reduce((acc: any, clientPath: string, currentIndex: number) => {
+            acc[clientPath] = {
+                schema: schemas[currentIndex],
+                documents: documents[currentIndex],
+                plugins: ['typescript', 'typescript-operations', 'typescript-generic-sdk'],
+                config: {
+                    rawRequest,
+                    scalars: {
+                        BigInt: 'bigint|number',
+                        Date: 'string',
+                    },
+                },
+            };
+
+            return acc;
+        }, {}),
+    };
+
+    return config;
+}
+
+async function getSchemasFromUrls(url: string[], schema: string[], header: string[] | undefined): Promise<boolean> {
+    if (url.length === schema.length) {
+        const apiCalls = url.map((url, index) => ({
+            url,
+            schema: schema[index]
+        }));
+
+        await Promise.all(apiCalls.map(async i => {
+            await runCommand(
+                header ?
+                    `get-graphql-schema ${i.url} > ${i.schema} ${header.map(h => `-h "${h}"`).join(' ')}` :
+                    `get-graphql-schema ${i.url} > ${i.schema}`
+            );
+            console.log(`Schema generated from "${i.url}" to "${i.schema}".`);
+        }));
+
+        return true;
+    } else {
+        console.log('Please provide equal count of url and schema parameters.');
+
+        return false;
+    }
+}
+
+async function appendCode(gqlFiles: string[], coverage: boolean) {
+
+    const importFragment =  coverage ? 'getSdkRequester, coverageLogger' : 'getSdkRequester';
+
+    const getSdkCoverageFragment = (loggerStash: string) => `coverageLogger(getSdk(getSdkRequester(apiContext, options, requestHandler)), '${loggerStash}')`;
+    const getSdkFragment = () => 'getSdk(getSdkRequester(apiContext, options, requestHandler))';
+
+    const graphqlAutogeneratedFileModification = (loggerStash?: string) => `
+
+// This additional logic appended by playwright-graphql cli to ensure seamless integration
+import { ${importFragment} } from 'playwright-graphql';
+
+export type APIRequestContext = Parameters<typeof getSdkRequester>[0];
+export type RequesterOptions = Parameters<typeof getSdkRequester>[1] | string;
+export type RequestHandler = Parameters<typeof getSdkRequester>[2];
+
+export const getClient = (apiContext: APIRequestContext, options?: RequesterOptions, requestHandler?: RequestHandler) => ${loggerStash ? getSdkCoverageFragment(loggerStash) : getSdkFragment()};
+
+export type GqlAPI = ReturnType<typeof getClient>;
+
+`;
+
+    await Promise.all(
+        gqlFiles.map(gqlClientFilePath => writeFile(
+                gqlClientFilePath,
+                graphqlAutogeneratedFileModification(coverage ? getPathToTmpCoverageStash(gqlClientFilePath) : undefined),
+                { flag: 'a' }
+            )
+        )
+    );
+
+    console.log('Type Script types for Playwright auto generated type safe GQL client generated.');
+}
+
+const convertToGlob = (path: string) => `${path}/**/*.{gql,graphql}`;
 
 async function main() {
     const argv = await yargs(hideBin(process.argv))
         .option('url', {
             alias: 'u',
             describe: 'Full GraphQL endpoint URL',
-            type: 'string',
+            type: 'array',
         })
         .option('header', {
             alias: 'h',
@@ -48,8 +180,8 @@ async function main() {
         .option('schema', {
             alias: 's',
             describe: 'Path to save the generated GraphQL schema file.',
-            type: 'string',
-            default: 'schema.gql',
+            type: 'array',
+            default: ['schema.gql'],
         })
         .option('gqlDir', {
             alias: 'd',
@@ -60,8 +192,19 @@ async function main() {
         .option('gqlFile', {
             alias: 'f',
             describe: 'Path to save the auto generated GraphQL queries and mutations and type script types.',
-            type: 'string',
-            default: 'graphql.ts',
+            type: 'array',
+            default: ['graphql.ts'],
+        })
+        .option('document', {
+            alias: 'o',
+            describe: 'Glob pattern that will be added to documents.',
+            type: 'array',
+        })
+        .option('introspect', {
+            alias: 'i',
+            describe: 'Introspect autogenerate operations, set false to turn off.',
+            type: 'boolean',
+            default: true,
         })
         .option('codegen', {
             alias: 'c',
@@ -69,14 +212,18 @@ async function main() {
             type: 'string',
             default: 'codegen.ts',
         })
-        .option('introspect', {
-            alias: 'i',
-            describe: 'Turns off auto generation of queries and mutations, for custom queries only.',
+        .option('saveCodegen', {
+            describe: 'Pass to save codegen file.',
             type: 'boolean',
-            default: true
+            default: false,
+        })
+        .option('custom', {
+            describe: 'Pass to generate client from custom codegen.ts file.',
+            type: 'boolean',
+            default: false,
         })
         .option('raw', {
-            describe: 'Path to save the auto generated GraphQL queries and mutations and type script types.',
+            describe: 'Pass to generate client with not type safe response.',
             type: 'boolean',
             default: false
         })
@@ -89,111 +236,82 @@ async function main() {
         .help()
         .argv;
 
-    if (argv.url) {
-        await runCommand(
-            argv.header ?
-                `get-graphql-schema ${argv.url} > ${argv.schema} ${argv.header.map(h => `-h "${h}"`).join(' ')}` :
-                `get-graphql-schema ${argv.url} > ${argv.schema}`
-        );
-        console.log(`Schema generated from "${argv.url}" to "${argv.schema}".`);
-    }
+    if (argv.custom) {
+        const codegen = await loadCodegenConfig({ configFilePath: argv.codegen });
 
-    if (!fs.existsSync(argv.schema)) {
-        console.log(`Schema file: "${argv.schema}" was not found.`);
-        console.log('Exit with no generated output.');
-        return;
-    }
+        await generate(codegen.config, true);
 
-    const operationsPath = `${argv.gqlDir}/${argv.introspect ? 'autogenerated-operations' : 'custom-operations' }`;
+        const gqlFiles = Object.keys(codegen.config.generates);
 
-    if (argv.introspect) {
-        await runCommand(`gqlg --schemaFilePath ${argv.schema} --destDirPath ${operationsPath} --depthLimit 8`);
-
-        console.log(`Operations were generated and saved to "${operationsPath}".`);
+        await appendCode(gqlFiles, argv.coverage);
     } else {
-        await mkdir(operationsPath, { recursive: true });
-    }
 
-    const codegenDefaultDocument = `${operationsPath}/**/*.gql`;
-    const codegenGqlFile = `${argv.gqlDir}/${argv.gqlFile}`;
+        const schemas = (argv.schema as string[]).map(schema => (schema.endsWith('.gql') || schema.endsWith('.graphql')) ? schema : `${schema}.gql`);
 
-    if (fs.existsSync(argv.codegen)) {
-        const mismatchLogs: string[] = [];
-        const existingContent = await readFile(argv.codegen, 'utf8');
+        if (argv.url) {
+            const result = await getSchemasFromUrls(argv.url as string[], argv.schema as string[], argv.header as string[]);
 
-        const schemaRegex = /\sschema:\s*(['"`])(.+?)\1,/;
-        const schemaMatch = existingContent.match(schemaRegex);
+            if (!result) return;
+        }
 
-        if (schemaMatch) {
-            if (schemaMatch[2] !== argv.schema) {
-                const updatedContent = existingContent.replace(
-                    schemaRegex,
-                    ` schema: '${argv.schema}',`
-                );
-                await writeFile(argv.codegen, updatedContent, 'utf8');
-                console.log(`Updated schema path in "${argv.codegen}".`);
+        for (const schema of schemas) {
+            if (!existsSync(schema)) {
+                console.log(`Schema file: "${argv.schema}" was not found.`);
+                console.log('Exit with no generated output.');
+
+                return;
             }
-        } else {
-            mismatchLogs.push(`Could not locate the schema property in "${argv.codegen}".`);
         }
 
-        if (argv.introspect && !existingContent.includes(codegenDefaultDocument)) {
-            mismatchLogs.push(`Could not path "${operationsPath}" to autogenerated operations in "${argv.codegen}".`);
-        }
-
-        if (!existingContent.includes(codegenGqlFile)) {
-            mismatchLogs.push(`Could not locate path to autogenerated graphql types file "${codegenGqlFile}" in "${argv.codegen}".`);
-        }
-
-        if (mismatchLogs.length) {
-            for (const log of mismatchLogs) {
-                console.log(log);
-            }
-            console.log(`Remove file "${argv.codegen}" to generate new one or fix existing file manually.`);
-
+        if (!argv.introspect && !argv.document) {
+            console.log('Client can not be build without any operations, in case of introspect false set path to custom operations: "-o path/to/folder-with-operations"');
             return;
         }
-    } else {
-        await writeFile(argv.codegen, codegenContent(argv.schema, codegenDefaultDocument, codegenGqlFile, argv.raw), 'utf8');
 
-        console.log(`File "${argv.codegen}" generated.`);
-    }
+        const operationsPaths: string[][] = [];
 
-    if (!argv.introspect) {
-        const dir = await readdir(operationsPath, { withFileTypes: true });
-        const operations = dir.map(i => i.isFile());
+        if (argv.document) {
+            const documents = argv.document as string[];
+            documents.forEach((doc, index) => {
+                if (operationsPaths[index]) {
+                    operationsPaths[index].push(convertToGlob(doc));
+                } else {
+                    operationsPaths.push([convertToGlob(doc)]);
+                }
+            });
+        }
 
-        if (!operations.includes(true)) {
-            console.log(`No operations found, API client "${codegenGqlFile}" was not generated, add operations and generate again.`);
+        const buildOperationsPath = (schemaDir: string) => `${argv.gqlDir}/${schemaDir.split('.')[0]}/autogenerated-operations`;
 
-            return;
+        if (argv.introspect) {
+            for (let i = 0; i < schemas.length; i++) {
+                const operationsPath = buildOperationsPath(schemas[i]);
+
+                await runCommand(`gqlg --schemaFilePath ${schemas[i]} --destDirPath ${operationsPath} --depthLimit 8`);
+
+                if (operationsPaths[i]) {
+                    operationsPaths[i].push(convertToGlob(operationsPath));
+                } else {
+                    operationsPaths.push([convertToGlob(operationsPath)]);
+                }
+
+                console.log(`Operations were generated and saved to "${operationsPath}".`);
+            }
+        }
+
+        const gqlFiles: string[] = (schemas.length === operationsPaths.length && operationsPaths.length === (argv.gqlFile as string[]).length) ?
+            (argv.gqlFile as string[]).map(file => `${argv.gqlDir}/${file.endsWith('.ts') ? file : `${file}.ts`}`) :
+            schemas.map(schema => `${argv.gqlDir}/${schema.split('.')[0]}.ts`);
+
+        await generate(buildCodegenConfig(schemas, operationsPaths, gqlFiles, argv.raw), true);
+
+        await appendCode(gqlFiles, argv.coverage);
+
+        if (argv.saveCodegen) {
+            await configToFile(buildCodegenConfig(schemas, operationsPaths, gqlFiles, argv.raw), argv.codegen);
+            console.log(`File "${argv.codegen}" generated.`);
         }
     }
-
-    await runCommand(`graphql-codegen --config ${argv.codegen}`);
-
-    const [importFragment, getSdkFragment] = argv.coverage ?
-        ['getSdkRequester, coverageLogger', 'coverageLogger(getSdk(getSdkRequester(apiContext, options, requestHandler)))'] :
-        ['getSdkRequester', 'getSdk(getSdkRequester(apiContext, options, requestHandler))'];
-
-    const graphqlAutogeneratedFileModification = `
-
-// This additional logic appended by playwright-graphql cli to ensure seamless integration
-import { ${importFragment} } from 'playwright-graphql';
-
-export type APIRequestContext = Parameters<typeof getSdkRequester>[0];
-export type RequesterOptions = Parameters<typeof getSdkRequester>[1] | string;
-export type RequestHandler = Parameters<typeof getSdkRequester>[2];
-
-export const getClient = (apiContext: APIRequestContext, options?: RequesterOptions, requestHandler?: RequestHandler) => ${getSdkFragment};
-
-export type GqlAPI = ReturnType<typeof getClient>;
-
-`;
-
-    await writeFile(codegenGqlFile, graphqlAutogeneratedFileModification, { flag: 'a' });
-
-    console.log('Type Script types for Playwright auto generated type safe GQL client generated.');
 }
 
 main().catch((err) => {
