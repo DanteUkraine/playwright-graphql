@@ -259,7 +259,15 @@ Schema generation with authentication:
 - `playwright-graphql --url http://localhost:4000/api/graphql --header "Authorization: Bearer token"`
 
 Syntax for complex headers:
+
 - `playwright-graphql --url http://localhost:4000/api/graphql -h "Cookies={'Authorization': 'Bearer token'}"`
+
+The same header will be added to each schema introspect API call.
+`playwright-graphql -u http://localhost:4000/api/graphql -u http://localhost:4001/api/graphql -h "Authorization: Bearer common-token" -s schema1.gql -s schema2.gql`
+
+Different headers for each url requires splitting scripts:
+`playwright-graphql -u http://localhost:4000/api/graphql -h "Authorization: Bearer first-token" -s schema1.gql`
+`playwright-graphql -u http://localhost:4001/api/graphql -h "Authorization: Bearer second-token" -s country.gql`
 
 Custom paths for generated files:
 
