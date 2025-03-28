@@ -2,7 +2,7 @@
 
 import { runCommand } from './run-command';
 import { existsSync } from 'fs';
-import {dirname, resolve, parse, join} from 'path';
+import { dirname, resolve, parse, join } from 'path';
 import { writeFile, mkdir } from 'fs/promises';
 import { hideBin } from 'yargs/helpers';
 import { generate, loadCodegenConfig, CodegenConfig } from '@graphql-codegen/cli';
