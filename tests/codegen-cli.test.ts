@@ -56,6 +56,22 @@ describe('Setup Codegen CLI', () => {
         });
     });
 
+    test('no logs with flag silent', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --url ${stabServer} --silent`,
+            { cwd: testDir }
+        );
+
+        const dir = await readdir(testDir, { withFileTypes: true });
+        expect(dir.map(i => i.name ).sort()).toEqual([ 'schema.gql', 'gql' ].sort());
+
+        expect(lastRequestHeaders).not.toHaveProperty('authorization');
+
+        expect(cliLogs).toMatchObject({
+            stdout: '',
+        });
+    });
+
     test('generates schemas and operations from multiple urls no headers', async () => {
         const cliLogs = await execAsync(
             `node ${cliPath} -u ${stabServer} -u ${stabServer} -s first-${schemaFile} -s second-${schemaFile} -f first-gql -f second-gql`,
