@@ -300,6 +300,10 @@ Generate multiple clients:
 
 - `playwright-graphql -u http://localhost:4000/api/graphql -u http://localhost:4000/api/graphql -s schema1.gql -s schema2.gql`
 
+Generate multiple clients into custom output dir with custom file names:
+
+- `playwright-graphql -s schema1.gql -s schema2.gqq -o ./apps/shell/e2e/gql/dgc-operations -d ./generated -f first-schema.ts -f second-schema.ts`
+
 _Output:_
 ```text
 📁 Project Root
