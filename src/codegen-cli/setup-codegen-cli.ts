@@ -82,6 +82,7 @@ function buildCodegenConfig(
     documents: string[][],
     gqlClients: string[],
     rawRequest: boolean,
+    silent: boolean,
 ): CodegenConfig {
     const config = {
         generates: gqlClients.reduce((acc: any, clientPath: string, currentIndex: number) => {
@@ -100,6 +101,7 @@ function buildCodegenConfig(
 
             return acc;
         }, {}),
+        silent
     };
 
     return config;
@@ -128,12 +130,12 @@ async function getSchemasFromUrls(url: string[], schema: string[], header: strin
                     `get-graphql-schema ${i.url} > ${i.schema} ${header.map(h => `-h "${h}"`).join(' ')}` :
                     `get-graphql-schema ${i.url} > ${i.schema}`
             );
-            console.log(`Schema generated from "${i.url}" to "${i.schema}".`);
+            log(`Schema generated from "${i.url}" to "${i.schema}".`);
         }));
 
         return true;
     } else {
-        console.log('Please provide equal count of url and schema parameters.');
+        log('Please provide equal count of url and schema parameters.');
 
         return false;
     }
@@ -170,10 +172,17 @@ export type GqlAPI = ReturnType<typeof getClient>;
         )
     );
 
-    console.log('Type Script types for Playwright auto generated type safe GQL client generated.');
+    log('Type Script types for Playwright auto generated type safe GQL client generated.');
 }
 
 const convertToGlob = (path: string) => `${path}/**/*.{gql,graphql}`;
+
+let isSilent: boolean = false;
+function log(...args: string[]): void {
+    if (!isSilent) {
+        console.log(...args);
+    }
+}
 
 async function main() {
     const argv = await yargs(hideBin(process.argv))
@@ -210,6 +219,10 @@ async function main() {
             describe: 'Glob pattern that will be added to documents.',
             type: 'array',
         })
+        .option('depthLimit', {
+            describe: 'Defines the maximum depth of nested fields to include in the generated GraphQL queries.',
+            type: 'number',
+        })
         .option('introspect', {
             alias: 'i',
             describe: 'Introspect autogenerate operations, set false to turn off.',
@@ -242,9 +255,16 @@ async function main() {
             type: 'boolean',
             default: false
         })
+        .option('silent', {
+            type: 'boolean',
+            description: 'Suppress all logs.',
+            default: false
+        })
         .version()
         .help()
         .argv;
+
+    isSilent = argv.silent;
 
     if (argv.custom) {
         const codegen = await loadCodegenConfig({ configFilePath: argv.codegen });
@@ -266,15 +286,15 @@ async function main() {
 
         for (const schema of schemas) {
             if (!existsSync(schema)) {
-                console.log(`Schema file: "${argv.schema}" was not found.`);
-                console.log('Exit with no generated output.');
+                log(`Schema file: "${argv.schema}" was not found.`);
+                log('Exit with no generated output.');
 
                 return;
             }
         }
 
         if (!argv.introspect && !argv.document) {
-            console.log('Client can not be build without any operations, in case of introspect false set path to custom operations: "-o path/to/folder-with-operations"');
+            log('Client can not be build without any operations, in case of introspect false set path to custom operations: "-o path/to/folder-with-operations"');
             return;
         }
 
@@ -297,7 +317,11 @@ async function main() {
             for (let i = 0; i < schemas.length; i++) {
                 const operationsPath = buildOperationsPath(schemas[i]);
 
-                await runCommand(`gqlg --schemaFilePath ${schemas[i]} --destDirPath ${operationsPath} --depthLimit 8`);
+                if (argv.depthLimit && !isNaN(argv.depthLimit)) {
+                    await runCommand(`gqlg --schemaFilePath ${schemas[i]} --destDirPath ${operationsPath} --depthLimit ${argv.depthLimit}`);
+                } else {
+                    await runCommand(`gqlg --schemaFilePath ${schemas[i]} --destDirPath ${operationsPath}`);
+                }
 
                 if (operationsPaths[i]) {
                     operationsPaths[i].push(convertToGlob(operationsPath));
@@ -305,7 +329,7 @@ async function main() {
                     operationsPaths.push([convertToGlob(operationsPath)]);
                 }
 
-                console.log(`Operations were generated and saved to "${operationsPath}".`);
+                log(`Operations were generated and saved to "${operationsPath}".`);
             }
         }
 
@@ -313,13 +337,13 @@ async function main() {
             (argv.gqlFile as string[]).map(file => `${argv.gqlDir}/${file.endsWith('.ts') ? file : `${file}.ts`}`) :
             schemas.map(schema => posix.join(argv.gqlDir, `${parse(schema).name}.ts`));
 
-        await generate(buildCodegenConfig(schemas, operationsPaths, gqlFiles, argv.raw), true);
+        await generate(buildCodegenConfig(schemas, operationsPaths, gqlFiles, argv.raw, argv.silent), true);
 
         await appendCode(gqlFiles, argv.coverage);
 
         if (argv.saveCodegen) {
-            await configToFile(buildCodegenConfig(schemas, operationsPaths, gqlFiles, argv.raw), argv.codegen);
-            console.log(`File "${argv.codegen}" generated.`);
+            await configToFile(buildCodegenConfig(schemas, operationsPaths, gqlFiles, argv.raw, argv.silent), argv.codegen);
+            log(`File "${argv.codegen}" generated.`);
         }
     }
 }
