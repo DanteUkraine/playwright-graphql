@@ -300,10 +300,6 @@ Generate multiple clients:
 
 - `playwright-graphql -u http://localhost:4000/api/graphql -u http://localhost:4000/api/graphql -s schema1.gql -s schema2.gql`
 
-Generate multiple clients into custom output dir with custom file names:
-
-- `playwright-graphql -s schema1.gql -s schema2.gqq -o ./apps/shell/e2e/gql/dgc-operations -d ./generated -f first-schema.ts -f second-schema.ts`
-
 _Output:_
 ```text
 📁 Project Root
@@ -321,6 +317,12 @@ _Output:_
     └── 📄 schema1.ts 
     └── 📄 schema2.ts
 ```
+
+Generate multiple clients into custom output dir with custom file names:
+
+- `playwright-graphql -s schema1.gql -s schema2.gqq -o ./apps/shell/e2e/gql/dgc-operations -d ./generated -f first-schema.ts -f second-schema.ts`
+
+
 When you generate multiple clients and do not specify name for ts file with `-f`, CLI will not reuse default name graphql.ts,
 each client name will match schema name to make it clear.
 
