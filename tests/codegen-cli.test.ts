@@ -369,4 +369,15 @@ describe('Setup Codegen CLI', () => {
             stdout: `Type Script types for Playwright auto generated type safe GQL client generated.\n`
         });
     });
+
+    test('throws error when --depthLimit is not number', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --url ${stabServer} --depthLimit .`,
+            { cwd: testDir }
+        );
+
+        expect(cliLogs).toMatchObject({
+            stderr: expect.stringContaining(`--depthLimit NaN but should be number`)
+        });
+    });
 });
