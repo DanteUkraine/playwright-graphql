@@ -83,6 +83,7 @@ function parseEnumStatement(sourceFile: ts.SourceFile, enumName: string): EnumVa
 }
 
 function parseCustomType(sourceFile: ts.SourceFile, name: string): ParsedParameters {
+
     const typeDeclaration = sourceFile.statements.find((i) => {
         return ts.isTypeAliasDeclaration(i) && i.name.text === name;
     });
@@ -93,7 +94,9 @@ function parseCustomType(sourceFile: ts.SourceFile, name: string): ParsedParamet
             if (isTypeCustom(i.type)) {
                 const custom = isEnum(sourceFile, i.type) ?
                     { enumValues: parseEnumStatement(sourceFile, i.type) } :
-                    { subParams: parseCustomType(sourceFile, i.type) };
+                    isEnumAsConst(sourceFile, i.type) ?
+                        { enumValues: parseEnumAsConstStatement(sourceFile, i.type) } :
+                        { subParams: parseCustomType(sourceFile, i.type) };
                 return {
                     ...i,
                     ...custom
@@ -105,6 +108,45 @@ function parseCustomType(sourceFile: ts.SourceFile, name: string): ParsedParamet
 
     return [];
 }
+
+function isEnumAsConst(sourceFile: ts.SourceFile, name: string): boolean {
+    const typeAlias = sourceFile.statements.find(stmt =>
+        ts.isTypeAliasDeclaration(stmt) &&
+        stmt.name.text === name
+    );
+
+    if (typeAlias && ts.isTypeAliasDeclaration(typeAlias)) {
+        const typeText = typeAlias.type.getText(sourceFile);
+        const pattern = `typeof\\s+${name}\\[keyof typeof\\s+${name}\\]`;
+        const regex = new RegExp(pattern);
+
+        return regex.test(typeText);
+    }
+
+    return false;
+}
+
+function parseEnumAsConstStatement(sourceFile: ts.SourceFile, name: string): EnumValues {
+    const constNameMatch = new RegExp(`(export\\s+)?const\\s+${name}\\s*=\\s*\\{`);
+    const enumAsConst = sourceFile.statements.find((statement) => {
+        return ts.isVariableStatement(statement) && constNameMatch.test(statement.getText());
+    });
+
+    if (enumAsConst) {
+        return enumAsConst.getText()
+            .replace(/.+{|}\sas\sconst;/g, '')
+            .split(/,/g)
+            .filter(i => i)
+            .map((i) => {
+                const [key, value] = i.trim().split(/:\s/);
+
+                return { key: removeOptionalFromKey(key), value: value.replace(/'/g, ''), called: 0 };
+            });
+    }
+
+    return [];
+}
+
 
 export function extractOperationsInputParamsSchema(absolutePath: string, sdkFunctionName: string = 'getSdk'): OperationSchema[] {
     const program: ts.Program = ts.createProgram([absolutePath], { emitDeclarationOnly: true });
@@ -153,7 +195,9 @@ export function extractOperationsInputParamsSchema(absolutePath: string, sdkFunc
                             if (isTypeCustom(i.type)) {
                                 const parsedParams = isEnum(sourceFile, i.type) ?
                                     { enumValues: parseEnumStatement(sourceFile, i.type) }:
-                                    { subParams: parseCustomType(sourceFile, i.type) };
+                                    isEnumAsConst(sourceFile, i.type) ?
+                                        { enumValues: parseEnumAsConstStatement(sourceFile, i.type) } :
+                                        { subParams: parseCustomType(sourceFile, i.type) };
                                 operationData.inputParams?.push({
                                     ...i,
                                     ...parsedParams,
