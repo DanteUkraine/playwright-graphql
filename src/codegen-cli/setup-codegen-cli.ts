@@ -83,9 +83,10 @@ function buildCodegenConfig(
     documents: string[][],
     gqlClients: string[],
     rawRequest: boolean,
+    enumsAsConst: boolean,
     silent: boolean,
 ): CodegenConfig {
-    const config = {
+    return {
         generates: gqlClients.reduce((acc: any, clientPath: string, currentIndex: number) => {
             acc[clientPath] = {
                 schema: schemas[currentIndex],
@@ -93,6 +94,7 @@ function buildCodegenConfig(
                 plugins: ['typescript', 'typescript-operations', 'typescript-generic-sdk'],
                 config: {
                     rawRequest,
+                    enumsAsConst,
                     scalars: {
                         BigInt: 'bigint|number',
                         Date: 'string',
@@ -104,8 +106,6 @@ function buildCodegenConfig(
         }, {}),
         silent
     };
-
-    return config;
 }
 
 async function ensureDirectoryExists(filePath: string): Promise<void> {
@@ -192,35 +192,35 @@ async function main() {
         .option('url', {
             alias: 'u',
             describe: 'Full GraphQL endpoint URL',
-            type: 'array',
+            type: 'array'
         })
         .option('header', {
             alias: 'h',
             describe: 'Optional authentication header for the get-graphql-schema command.',
-            type: 'array',
+            type: 'array'
         })
         .option('schema', {
             alias: 's',
             describe: 'Path to save the generated GraphQL schema file.',
             type: 'array',
-            default: ['schema.gql'],
+            default: ['schema.gql']
         })
         .option('gqlDir', {
             alias: 'd',
             describe: 'Path to save the auto generated GraphQL files.',
             type: 'string',
-            default: 'gql',
+            default: 'gql'
         })
         .option('gqlFile', {
             alias: 'f',
             describe: 'Path to save the auto generated GraphQL queries and mutations and type script types.',
             type: 'array',
-            default: ['graphql.ts'],
+            default: ['graphql.ts']
         })
         .option('document', {
             alias: 'o',
             describe: 'Glob pattern that will be added to documents.',
-            type: 'array',
+            type: 'array'
         })
         .option('depthLimit', {
             describe: 'Defines the maximum depth of nested fields to include in the generated GraphQL queries.',
@@ -231,7 +231,7 @@ async function main() {
             alias: 'i',
             describe: 'Introspect autogenerate operations, set false to turn off.',
             type: 'boolean',
-            default: true,
+            default: true
         })
         .option('codegen', {
             alias: 'c',
@@ -242,15 +242,20 @@ async function main() {
         .option('saveCodegen', {
             describe: 'Pass to save codegen file.',
             type: 'boolean',
-            default: false,
+            default: false
         })
         .option('custom', {
             describe: 'Pass to generate client from custom codegen.ts file.',
             type: 'boolean',
-            default: false,
+            default: false
         })
         .option('raw', {
             describe: 'Pass to generate client with not type safe response.',
+            type: 'boolean',
+            default: false
+        })
+        .option('enumsAsConst', {
+            describe: 'Type safe client will be build with "as const" instead of enum.',
             type: 'boolean',
             default: false
         })
@@ -347,12 +352,12 @@ async function main() {
             (argv.gqlFile as string[]).map(file => `${argv.gqlDir}/${file.endsWith('.ts') ? file : `${file}.ts`}`) :
             schemas.map(schema => posix.join(argv.gqlDir, `${parse(schema).name}.ts`));
 
-        await generate(buildCodegenConfig(schemas, operationsPaths, gqlFiles, argv.raw, argv.silent), true);
+        await generate(buildCodegenConfig(schemas, operationsPaths, gqlFiles, argv.raw, argv.enumsAsConst, argv.silent), true);
 
         await appendCode(gqlFiles, argv.coverage);
 
         if (argv.saveCodegen) {
-            await configToFile(buildCodegenConfig(schemas, operationsPaths, gqlFiles, argv.raw, argv.silent), argv.codegen);
+            await configToFile(buildCodegenConfig(schemas, operationsPaths, gqlFiles, argv.raw, argv.enumsAsConst, argv.silent), argv.codegen);
             log(`File "${argv.codegen}" generated.`);
         }
     }
