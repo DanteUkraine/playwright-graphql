@@ -34,6 +34,29 @@ describe('Graphql Coverage Report', () => {
         expect(reporter['saveGqlCoverageLog']).toEqual(options.saveGqlCoverageLog);
     });
 
+    test('should parse enums as const and enums equally', async () => {
+        const options1 = {
+            graphqlFilePath: './tests/resources/clientWithEnum.ts',
+            coverageFilePath: './mock-coverage.log',
+            logUncoveredOperations: true,
+            minCoveragePerOperation: 80,
+            saveGqlCoverageLog: true,
+        };
+
+        const options2 = {
+            graphqlFilePath: './tests/resources/clientWithEnumsAsConst.ts',
+            coverageFilePath: './mock-coverage.log',
+            logUncoveredOperations: true,
+            minCoveragePerOperation: 80,
+            saveGqlCoverageLog: true,
+        };
+
+        const reporter1 = new GraphqlCoverageReport(options1);
+        const reporter2 = new GraphqlCoverageReport(options2);
+
+        expect(reporter2['operationsSchema']).toEqual(reporter1['operationsSchema']);
+    });
+
     test('should initialize with required options', async () => {
         const options = {
             graphqlFilePath: './tests/resources/raw-graphql.ts',
