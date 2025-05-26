@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { resolve } from 'path';
 import { coverageLogger } from '../src';
 
 jest.mock('fs/promises');
@@ -31,7 +31,7 @@ describe('Coverage logger', () => {
 
         await proxiedObject.testMethod('test', 42);
 
-        const expectedLogPath = join(dirStashPath, 'testMethod');
+        const expectedLogPath = resolve(dirStashPath, 'testMethod');
         const expectedLogContent = `${JSON.stringify({ name: 'testMethod', inputParams: ['test', 42] })},`;
 
         expect(writeFileMock).toHaveBeenCalledWith(expectedLogPath, expectedLogContent, { flag: 'a' });
