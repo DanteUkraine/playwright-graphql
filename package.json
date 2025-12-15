@@ -1,6 +1,6 @@
 {
   "name": "playwright-graphql",
-  "version": "2.2.1-beta1",
+  "version": "2.2.1",
   "description": "This library provide playwright integration with graphql for efficient API tests.",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -43,14 +43,14 @@
   },
   "homepage": "https://danteukraine.github.io/playwright-graphql",
   "dependencies": {
-    "@graphql-codegen/cli": "5.0.5",
-    "@graphql-codegen/typescript": "4.1.5",
-    "@graphql-codegen/typescript-generic-sdk": "4.0.1",
-    "@graphql-codegen/typescript-operations": "4.5.1",
+    "@graphql-codegen/cli": "6.1.0",
+    "@graphql-codegen/typescript": "5.0.6",
+    "@graphql-codegen/typescript-generic-sdk": "4.0.2",
+    "@graphql-codegen/typescript-operations": "5.0.6",
     "get-graphql-schema": "2.1.2",
     "gql-generator": "2.0.0",
-    "json-bigint-patch": "^0.0.8",
-    "prettier": "^3.5.3",
+    "json-bigint-patch": "^0.0.9",
+    "prettier": "^3.7.4",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
@@ -61,7 +61,7 @@
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "@playwright/test": ">= 1.44.x"
