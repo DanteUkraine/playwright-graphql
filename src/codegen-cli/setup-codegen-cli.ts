@@ -227,6 +227,11 @@ async function main() {
             type: 'number',
             default: 20
         })
+        .option('includeCrossReferences', {
+            describe: 'There might be recursive fields in the query, so gql-generator ignores the types which have been added in the parent queries already by default. This can be disabled using the --includeCrossReferences false.',
+            type: 'boolean',
+            default: false
+        })
         .option('introspect', {
             alias: 'i',
             describe: 'Introspect autogenerate operations, set false to turn off.',
@@ -335,7 +340,8 @@ async function main() {
                     schemaFilePath: schemas[i],
                     destDirPath: operationsPath,
                     depthLimit: argv.depthLimit,
-                    fileExtension: 'gql'
+                    fileExtension: 'gql',
+                    includeCrossReferences: argv.includeCrossReferences,
                 });
 
                 if (operationsPaths[i]) {
