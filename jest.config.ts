@@ -9,7 +9,7 @@ const config: Config = {
         '^.+\\.ts$': 'ts-jest',
     },
     transformIgnorePatterns: [
-        'node_modules/(?!(gql-generator|get-graphql-schema|@graphql-codegen)/)',
+        'node_modules/(?!(gql-generator|get-graphql-schema|@graphql-codegen|yargs)/)',
     ],
 };
 
