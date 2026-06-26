@@ -81,7 +81,7 @@ export function buildParamCoverageString(param: ParsedParameter, indent: string 
     if (param.subParams) {
         result += `: {\n${param.subParams.map(i => buildParamCoverageString(i, currentIndent)).join(',\n')}\n${indent}}`;
     } else if (param.enumValues) {
-        result += `: [${param.enumValues.map(i => `${i.value} ${putCoverSign(param.called)}`).join(', ')}]`;
+        result += `: [${param.enumValues.map(i => `${i.value} ${putCoverSign(i.called)}`).join(', ')}]`;
     }
 
     return result;
