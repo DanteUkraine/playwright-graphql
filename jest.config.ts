@@ -8,6 +8,9 @@ const config: Config = {
     transform: {
         '^.+\\.ts$': 'ts-jest',
     },
+    transformIgnorePatterns: [
+        'node_modules/(?!(gql-generator|get-graphql-schema|@graphql-codegen)/)',
+    ],
 };
 
 export default config;

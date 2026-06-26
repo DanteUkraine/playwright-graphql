@@ -37,7 +37,14 @@ function parseTypeStatement(typeStatement: ts.Statement): ParsedParameters {
         .filter(i => i)
         .map((i) => {
             const [key, value] = i.trim().split(/:\s/);
-            const narrowedTypeString = value.replace(/.+<|>/g, '').replace(/[A-Za-z]+\['|'.+/g, '');
+            if (!value) {
+                return {
+                    key: removeOptionalFromKey(key),
+                    type: '',
+                    called: 0
+                };
+            }
+            const narrowedTypeString = value.replace(/.+<|>/g, '').replace(/[A-Za-z]+\\\[|'[^']+/g, '');
             return {
                 key: removeOptionalFromKey(key),
                 type: narrowedTypeString,
