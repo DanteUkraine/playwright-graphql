@@ -43,7 +43,7 @@
   },
   "homepage": "https://danteukraine.github.io/playwright-graphql",
   "dependencies": {
-    "@graphql-codegen/cli": "^7.1.3",
+    "@graphql-codegen/cli": "6.1.0",
     "@graphql-codegen/typescript": "^5.0.6",
     "@graphql-codegen/typescript-generic-sdk": "^5.0.1",
     "@graphql-codegen/typescript-operations": "^5.0.6",
