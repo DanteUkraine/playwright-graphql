@@ -1,5 +1,10 @@
+// TODO: Refactor to use ts-morph library (Issue #36)
+// ts-morph provides a higher-level, more maintainable API for TypeScript AST manipulation
+// and avoids compatibility issues with TypeScript version changes.
+// Current implementation uses TypeScript Compiler API directly.
+// ts-morph has been added as a dependency for future migration.
 import * as ts from "typescript";
-import { ParsedParameters, EnumValues,OperationSchema } from './types';
+import { ParsedParameters, EnumValues, OperationSchema } from './types';
 
 function removeOptionalFromKey(key: string): string {
     return key.replace(/\?|\s/g, '');
