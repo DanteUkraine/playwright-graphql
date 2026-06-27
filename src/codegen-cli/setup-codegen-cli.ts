@@ -5,6 +5,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { dirname, resolve, parse, posix, join } from 'path';
 
 import { generate, loadCodegenConfig, type CodegenConfig } from '@graphql-codegen/cli';
+import { printSchema, buildClientSchema, getIntrospectionQuery } from 'graphql';
 import gqlg from 'gql-generator';
 import prettier from 'prettier';
 import yargs from 'yargs';
@@ -146,6 +147,48 @@ function getGetGraphqlSchemaPath(): string {
     return join(__dirname, '../../node_modules/.bin/get-graphql-schema');
 }
 
+/**
+ * Fetches schema from a GraphQL endpoint using native fetch and introspection.
+ * This is a fallback when get-graphql-schema fails (e.g., on Node.js 22 with node-fetch@2.x issues).
+ */
+async function fetchSchemaWithIntrospection(url: string, headers?: string[]): Promise<string> {
+    const introspectionQuery = getIntrospectionQuery();
+    
+    const headersObj: Record<string, string> = { 'Content-Type': 'application/json' };
+    
+    // Parse header strings like "Authorization=Bearer token" into headers
+    if (headers) {
+        for (const header of headers) {
+            const [key, value] = header.split('=');
+            if (key && value) {
+                headersObj[key] = value;
+            }
+        }
+    }
+    
+    // Use native fetch (available in Node.js 18+)
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: headersObj,
+        body: JSON.stringify({ query: introspectionQuery })
+    });
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (result.errors) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
+    }
+    
+    // Convert introspection result to schema string
+    // buildClientSchema takes the introspection result data and creates a GraphQLSchema
+    const clientSchema = buildClientSchema(result.data);
+    return printSchema(clientSchema);
+}
+
 function isValidUrl(url: string): boolean {
     try {
         const parsed = new URL(url);
@@ -168,24 +211,51 @@ async function getSchemasFromUrls(url: string[], schema: string[], header: strin
             const getGraphqlSchemaPath = getGetGraphqlSchemaPath();
             const headerArgs = header ? header.map(h => `-h "${h}"`).join(' ') : '';
             
-            await runCommand(
-                `${getGraphqlSchemaPath} ${headerArgs ? headerArgs + ' ' : ''}${i.url} > ${i.schema}`
-            );
-            
-            // Validate that schema file was created and is not empty
-            if (!existsSync(i.schema)) {
-                log(`Error: Schema file "${i.schema}" was not created. Check if the GraphQL endpoint "${i.url}" is accessible.`);
-                return false;
+            // Try using get-graphql-schema first
+            try {
+                await runCommand(
+                    `${getGraphqlSchemaPath} ${headerArgs ? headerArgs + ' ' : ''}${i.url} > ${i.schema}`
+                );
+                
+                // Validate that schema file was created and is not empty
+                if (!existsSync(i.schema)) {
+                    log(`Error: Schema file "${i.schema}" was not created. Check if the GraphQL endpoint "${i.url}" is accessible.`);
+                    return false;
+                }
+                
+                const { stat: statFn } = await import('fs/promises');
+                const fileStats = await statFn(i.schema);
+                if (fileStats.size === 0) {
+                    throw new Error('Schema file is empty');
+                }
+                
+                log(`Schema generated from "${i.url}" to "${i.schema}".`);
+            } catch (error) {
+                // Fallback: use native fetch with introspection query
+                // This handles cases where get-graphql-schema fails (e.g., Node.js 22 with node-fetch@2.x issues)
+                try {
+                    log(`Using fallback introspection for "${i.url}" (get-graphql-schema failed)`);
+                    const schemaString = await fetchSchemaWithIntrospection(i.url, header);
+                    await writeFile(i.schema, schemaString, 'utf8');
+                    
+                    if (!existsSync(i.schema)) {
+                        log(`Error: Schema file "${i.schema}" was not created. Check if the GraphQL endpoint "${i.url}" is accessible.`);
+                        return false;
+                    }
+                    
+                    const { stat: statFn } = await import('fs/promises');
+                    const fileStats = await statFn(i.schema);
+                    if (fileStats.size === 0) {
+                        log(`Error: Schema file "${i.schema}" is empty. Check if the GraphQL endpoint "${i.url}" is accessible and returns a valid schema.`);
+                        return false;
+                    }
+                    
+                    log(`Schema generated from "${i.url}" to "${i.schema}" (using fallback).`);
+                } catch (fallbackError) {
+                    log(`Error fetching schema from "${i.url}": ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+                    return false;
+                }
             }
-            
-            const { stat: statFn } = await import('fs/promises');
-            const fileStats = await statFn(i.schema);
-            if (fileStats.size === 0) {
-                log(`Error: Schema file "${i.schema}" is empty. Check if the GraphQL endpoint "${i.url}" is accessible and returns a valid schema.`);
-                return false;
-            }
-            
-            log(`Schema generated from "${i.url}" to "${i.schema}".`);
         }
 
         return true;
