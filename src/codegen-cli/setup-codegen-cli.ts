@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync } from 'fs';
-import { writeFile, mkdir, stat } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { dirname, resolve, parse, posix, join } from 'path';
 
 import { generate, loadCodegenConfig, type CodegenConfig } from '@graphql-codegen/cli';
@@ -142,28 +142,6 @@ async function ensureDirectoryExists(filePath: string): Promise<void> {
     }
 }
 
-async function validateSchemaFiles(schemas: string[]): Promise<boolean> {
-    for (const schema of schemas) {
-        if (!existsSync(schema)) {
-            log(`Schema file: "${schema}" was not found.`);
-            return false;
-        }
-        
-        try {
-            const fileStats = await stat(schema);
-            if (fileStats.size === 0) {
-                log(`Schema file: "${schema}" is empty. Check if the GraphQL endpoint is accessible and returns a valid schema.`);
-                return false;
-            }
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            log(`Error validating schema file: "${schema}": ${errorMessage}`);
-            return false;
-        }
-    }
-    return true;
-}
-
 function getGetGraphqlSchemaPath(): string {
     return join(__dirname, '../../node_modules/.bin/get-graphql-schema');
 }
@@ -175,8 +153,7 @@ async function getSchemasFromUrls(url: string[], schema: string[], header: strin
             schema: schema[index]
         }));
 
-        await Promise.all(apiCalls.map(async i => {
-
+        for (const i of apiCalls) {
             await ensureDirectoryExists(i.schema);
 
             const getGraphqlSchemaPath = getGetGraphqlSchemaPath();
@@ -185,8 +162,22 @@ async function getSchemasFromUrls(url: string[], schema: string[], header: strin
             await runCommand(
                 `${getGraphqlSchemaPath} ${headerArgs ? headerArgs + ' ' : ''}${i.url} > ${i.schema}`
             );
+            
+            // Validate that schema file was created and is not empty
+            if (!existsSync(i.schema)) {
+                log(`Error: Schema file "${i.schema}" was not created. Check if the GraphQL endpoint "${i.url}" is accessible.`);
+                return false;
+            }
+            
+            const { stat: statFn } = await import('fs/promises');
+            const fileStats = await statFn(i.schema);
+            if (fileStats.size === 0) {
+                log(`Error: Schema file "${i.schema}" is empty. Check if the GraphQL endpoint "${i.url}" is accessible and returns a valid schema.`);
+                return false;
+            }
+            
             log(`Schema generated from "${i.url}" to "${i.schema}".`);
-        }));
+        }
 
         return true;
     } else {
@@ -354,10 +345,13 @@ async function main(): Promise<void> {
             if (!result) return;
         }
 
-        const areSchemasValid = await validateSchemaFiles(schemas);
-        if (!areSchemasValid) {
-            log('Exit with no generated output.');
-            return;
+        for (const schema of schemas) {
+            if (!existsSync(schema)) {
+                log(`Schema file: "${String(argv.schema)}" was not found.`);
+                log('Exit with no generated output.');
+
+                return;
+            }
         }
 
         if (!argv.introspect && !argv.document) {
