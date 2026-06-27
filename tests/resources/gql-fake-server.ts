@@ -11,41 +11,15 @@ export interface RequestInfo {
 // Track all requests for debugging
 export const receivedRequests: RequestInfo[] = [];
 
-// Default schema with more realistic GraphQL types
+// Default schema - keep it simple for compatibility
 const defaultSchema = buildSchema(`
   type Query {
     hello: String
-    user(id: ID!): User
-    users: [User!]!
-  }
-
-  type Mutation {
-    createUser(name: String!): User
-  }
-
-  type User {
-    id: ID!
-    name: String!
-    email: String!
   }
 `);
 
 const defaultRootValue = {
     hello: () => 'Hello from the fake GraphQL server!',
-    user: ({ id }: { id: string }) => ({
-        id,
-        name: `User ${id}`,
-        email: `user${id}@example.com`
-    }),
-    users: () => [
-        { id: '1', name: 'Alice', email: 'alice@example.com' },
-        { id: '2', name: 'Bob', email: 'bob@example.com' }
-    ],
-    createUser: ({ name }: { name: string }) => ({
-        id: Date.now().toString(),
-        name,
-        email: `${name.toLowerCase()}@example.com`
-    })
 };
 
 // Allow schema customization for different test scenarios
@@ -154,12 +128,11 @@ export async function startFakeGraphQLServer(port: number = 0): Promise<void> {
                             return;
                         }
 
-                        // Execute GraphQL query
+                        // Execute GraphQL query - use same format as original
                         const result = await graphql({
                             schema: currentSchema,
                             source: requestBody.query,
-                            rootValue: currentRootValue,
-                            variableValues: requestBody.variables
+                            rootValue: currentRootValue
                         });
 
                         res.writeHead(200, { 'Content-Type': 'application/json' });
