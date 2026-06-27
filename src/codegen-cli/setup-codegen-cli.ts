@@ -7,6 +7,7 @@ import { dirname, resolve, parse, posix, join } from 'path';
 import { generate, loadCodegenConfig, type CodegenConfig } from '@graphql-codegen/cli';
 import gqlg from 'gql-generator';
 import { printSchema, buildClientSchema, getIntrospectionQuery } from 'graphql';
+import type { IntrospectionQuery } from 'graphql/utilities/getIntrospectionQuery';
 import prettier from 'prettier';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -186,8 +187,9 @@ async function fetchSchemaWithIntrospection(url: string, headers?: string[]): Pr
     
     // Convert introspection result to schema string
     // buildClientSchema takes the introspection result data and creates a GraphQLSchema
+    // The introspection result from a GraphQL server matches the IntrospectionQuery interface
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-    const clientSchema = buildClientSchema(result.data as Record<string, unknown>);
+    const clientSchema = buildClientSchema(result.data as IntrospectionQuery);
     return printSchema(clientSchema);
 }
 
