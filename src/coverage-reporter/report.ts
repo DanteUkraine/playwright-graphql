@@ -1,10 +1,9 @@
-import type { Reporter } from '@playwright/test/reporter';
 import { existsSync } from 'fs';
 import { access, rm, writeFile, mkdir, readdir, readFile } from 'fs/promises';
-import { generateHtmlReport } from './html-generator';
-import { extractOperationsInputParamsSchema } from './gql-client-parser';
 import { join, resolve } from 'path';
-import { OperationSchema } from './types';
+
+import type { Reporter } from '@playwright/test/reporter';
+
 import {
   incrementCountersInOperationSchema,
   calculateOperationCoverage,
@@ -13,10 +12,14 @@ import {
   floorDecimal
 } from './coverage-calculation-helpers';
 import { getPathToTmpCoverageStash } from './coverageStashPath';
+import { extractOperationsInputParamsSchema } from './gql-client-parser';
+import { generateHtmlReport } from './html-generator';
+import { OperationSchema } from './types';
 
 function isFileExists(path: string): Promise<boolean> {
   return access(path).then(() => true, () => false);
 }
+
 
 export type Summary = {
   coverage?: string,
@@ -66,21 +69,23 @@ export default class GraphqlCoverageReport implements Reporter {
     this.saveHtmlSummary = options.saveHtmlSummary ?? false;
   }
 
-  async onBegin() {
+  async onBegin(): Promise<void> {
     if (await isFileExists(this.coverageDir)) await rm(this.coverageDir, { recursive: true });
     await mkdir(this.coverageDir);
   }
 
-  async onEnd() {
+  async onEnd(): Promise<void> {
     if (!await isFileExists(this.coverageDir)) throw new Error(`Directory with logged coverage was not found: ${this.coverageDir}`);
     const operationsFiles = await readdir(this.coverageDir);
 
-    const coveredOperationsWithArgs: { name: string, calls: { name: string, inputParams: any[] }[] }[] = await Promise.all(
+    type OperationCall = { name: string; inputParams: unknown[] };
+    type OperationCalls = { name: string; calls: OperationCall[] };
+    const coveredOperationsWithArgs: OperationCalls[] = await Promise.all(
         operationsFiles.map(async (fileName) => {
           const operationFile = await readFile(join(this.coverageDir, fileName), { encoding: 'utf8' });
           return {
             name: fileName,
-            calls: JSON.parse(`[${operationFile.slice(0, -1)}]`), // .slice(0, -1) because last char always will be a comma.
+            calls: JSON.parse(`[${operationFile.slice(0, -1)}]`) as OperationCall[], // .slice(0, -1) because last char always will be a comma.
           };
         })
     );
@@ -135,18 +140,27 @@ export default class GraphqlCoverageReport implements Reporter {
   }
 
   async onExit(): Promise<void> {
+    // eslint-disable-next-line no-console
     console.log(`\n=== Coverage for ${this.apiClientFileName} client `+'===');
+    // eslint-disable-next-line no-console
     console.log(this.summary.coverage);
+    // eslint-disable-next-line no-console
     console.log(this.summary.coverageTotal);
+    // eslint-disable-next-line no-console
     console.log(this.summary.covered);
+    // eslint-disable-next-line no-console
     console.log(this.summary.operationsCoverageSummary);
     if (this.logUncoveredOperations) {
+      // eslint-disable-next-line no-console
       console.log('==='+' Uncovered operations '+'===');
+      // eslint-disable-next-line no-console
       console.log(`${this.summary.operationsArgCoverage
           .filter(i => !i.covered)
           .map(({ name, argsCoverage }) => `${name} ${argsCoverage}`)
           .join('\n')}`);
     }
+    // eslint-disable-next-line no-console
     console.log('============================\n');
+    await Promise.resolve();
   }
 }

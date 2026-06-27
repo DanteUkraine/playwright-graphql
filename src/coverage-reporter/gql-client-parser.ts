@@ -1,7 +1,45 @@
 // ts-morph provides a higher-level, more maintainable API for TypeScript AST manipulation
 // and avoids compatibility issues with TypeScript version changes.
-import { Project, SourceFile, SyntaxKind } from "ts-morph";
+import { Project, SourceFile, SyntaxKind, TypeAliasDeclaration } from "ts-morph";
+
 import { ParsedParameters, EnumValues, OperationSchema } from './types';
+
+// Type guards for ts-morph nodes
+function hasGetMembers(node: unknown): node is { getMembers: () => unknown[] } {
+    return typeof node === 'object' && node !== null && 'getMembers' in node;
+}
+
+function hasGetKind(node: unknown): node is { getKind: () => SyntaxKind } {
+    return typeof node === 'object' && node !== null && 'getKind' in node;
+}
+
+function hasGetName(node: unknown): node is { getName: () => string } {
+    return typeof node === 'object' && node !== null && 'getName' in node;
+}
+
+function hasGetNameNode(node: unknown): node is { getNameNode: () => { getText?: () => string } } {
+    return typeof node === 'object' && node !== null && 'getNameNode' in node;
+}
+
+function hasGetTypeNode(node: unknown): node is { getTypeNode: () => { getText?: () => string } } {
+    return typeof node === 'object' && node !== null && 'getTypeNode' in node;
+}
+
+function hasGetText(node: unknown): node is { getText: () => string } {
+    return typeof node === 'object' && node !== null && 'getText' in node;
+}
+
+function hasGetTypeArguments(node: unknown): node is { getTypeArguments: () => unknown[] } {
+    return typeof node === 'object' && node !== null && 'getTypeArguments' in node;
+}
+
+function hasGetDescendantsOfKind(node: unknown): node is { getDescendantsOfKind: (kind: SyntaxKind) => unknown[] } {
+    return typeof node === 'object' && node !== null && 'getDescendantsOfKind' in node;
+}
+
+function hasGetParameters(node: unknown): node is { getParameters: () => unknown[] } {
+    return typeof node === 'object' && node !== null && 'getParameters' in node;
+}
 
 function removeOptionalFromKey(key: string): string {
     // Remove optional modifier and whitespace using string methods
@@ -69,23 +107,23 @@ function getTypeNameFromTypeNode(typeString: string): string {
     return baseType;
 }
 
-function parseTypeLiteralUsingMorph(typeLiteral: any): ParsedParameters {
+function parseTypeLiteralUsingMorph(typeLiteral: unknown): ParsedParameters {
     const result: ParsedParameters = [];
-    if (!typeLiteral || !typeLiteral.getMembers) return result;
+    if (!hasGetMembers(typeLiteral)) return result;
     
     const members = typeLiteral.getMembers();
     
     for (const member of members) {
         // Skip method signatures and call signatures
-        if (member.getKind && (member.getKind() === SyntaxKind.MethodSignature || member.getKind() === SyntaxKind.CallSignature)) continue;
+        if (hasGetKind(member) && (member.getKind() === SyntaxKind.MethodSignature || member.getKind() === SyntaxKind.CallSignature)) continue;
         
         // Try to get the name - different member types have different ways
         let key = '';
-        if (member.getName) {
+        if (hasGetName(member)) {
             key = member.getName();
-        } else if (member.getNameNode) {
+        } else if (hasGetNameNode(member)) {
             const nameNode = member.getNameNode();
-            if (nameNode && nameNode.getText) {
+            if (nameNode && hasGetText(nameNode)) {
                 key = nameNode.getText();
             }
         }
@@ -93,9 +131,9 @@ function parseTypeLiteralUsingMorph(typeLiteral: any): ParsedParameters {
         if (!key) continue;
         
         let typeText = '';
-        if (member.getTypeNode) {
+        if (hasGetTypeNode(member)) {
             const typeNode = member.getTypeNode();
-            if (typeNode && typeNode.getText) {
+            if (typeNode && hasGetText(typeNode)) {
                 typeText = typeNode.getText();
             }
         }
@@ -110,34 +148,36 @@ function parseTypeLiteralUsingMorph(typeLiteral: any): ParsedParameters {
     return result;
 }
 
-function parseExactTypeUsingMorph(typeNode: any): ParsedParameters {
+function parseExactTypeUsingMorph(typeNode: unknown): ParsedParameters {
     // Check if it's a TypeReference to Exact
-    if (typeNode && typeNode.getKind && typeNode.getKind() === SyntaxKind.TypeReference) {
+    if (hasGetKind(typeNode) && typeNode.getKind() === SyntaxKind.TypeReference) {
         // Get the type name from the text
-        const typeText = typeNode.getText ? typeNode.getText() : '';
+        const typeText = hasGetText(typeNode) ? typeNode.getText() : '';
         const typeName = typeText.split('<')[0];
         
         if (typeName === 'Exact') {
-            const typeArgs = typeNode.getTypeArguments ? typeNode.getTypeArguments() : null;
-            if (typeArgs && typeArgs.length > 0) {
-                const firstArg = typeArgs[0];
-                // First argument should be a TypeLiteral
-                if (firstArg && firstArg.getKind && firstArg.getKind() === SyntaxKind.TypeLiteral) {
-                    return parseTypeLiteralUsingMorph(firstArg);
+            if (hasGetTypeArguments(typeNode)) {
+                const typeArgs = typeNode.getTypeArguments();
+                if (typeArgs.length > 0) {
+                    const firstArg = typeArgs[0];
+                    // First argument should be a TypeLiteral
+                    if (hasGetKind(firstArg) && firstArg.getKind() === SyntaxKind.TypeLiteral) {
+                        return parseTypeLiteralUsingMorph(firstArg);
+                    }
                 }
             }
         }
     }
     
     // If not Exact, try to parse as a regular type literal
-    if (typeNode && typeNode.getKind && typeNode.getKind() === SyntaxKind.TypeLiteral) {
+    if (hasGetKind(typeNode) && typeNode.getKind() === SyntaxKind.TypeLiteral) {
         return parseTypeLiteralUsingMorph(typeNode);
     }
     
     return [];
 }
 
-function findTypeAliasInSourceFile(sourceFile: SourceFile, name: string) {
+function findTypeAliasInSourceFile(sourceFile: SourceFile, name: string): TypeAliasDeclaration | undefined {
     try {
         return sourceFile.getTypeAlias(name);
     } catch (e) {
@@ -156,13 +196,13 @@ function parseEnumStatementUsingMorph(sourceFile: SourceFile, enumName: string):
         const name = member.getName();
         const initializer = member.getInitializer();
         let value = name;
-        if (initializer) {
-            value = initializer.getText().replace(/'/g, '');
+        if (initializer && hasGetText(initializer)) {
+            value = initializer.getText().split("'").join('');
         }
         
         result.push({
             key: removeOptionalFromKey(name),
-            value: value.replace(/'/g, ''),
+            value: value.split("'").join(''),
             called: 0
         });
     }
@@ -183,20 +223,20 @@ function parseEnumAsConstStatementUsingMorph(sourceFile: SourceFile, name: strin
             const result: EnumValues = [];
             const propertyAssignments = objectLiteral.getDescendantsOfKind(SyntaxKind.PropertyAssignment);
             
-            for (const property of propertyAssignments as any[]) {
+            for (const property of propertyAssignments) {
                 const propNameNode = property.getNameNode();
-                if (!propNameNode) continue;
+                if (!propNameNode || !hasGetText(propNameNode)) continue;
                 
                 const propName = propNameNode.getText();
                 const valueNode = property.getInitializer();
                 let value = propName;
-                if (valueNode) {
-                    value = valueNode.getText().replace(/'/g, '');
+                if (valueNode && hasGetText(valueNode)) {
+                    value = valueNode.getText().split("'").join('');
                 }
                 
                 result.push({
                     key: removeOptionalFromKey(propName),
-                    value: value.replace(/'/g, ''),
+                    value: value.split("'").join(''),
                     called: 0
                 });
             }
@@ -216,7 +256,7 @@ function isEnumAsConstUsingMorph(sourceFile: SourceFile, name: string): boolean 
     for (const declaration of variableDeclarations) {
         if (declaration.getName() === name) {
             const initializer = declaration.getInitializer();
-            if (initializer && initializer.getText().includes('as const')) {
+            if (initializer && hasGetText(initializer) && initializer.getText().includes('as const')) {
                 return true;
             }
         }
@@ -237,7 +277,7 @@ function parseCustomTypeUsingMorph(sourceFile: SourceFile, name: string): Parsed
     for (const param of parsedParams) {
         if (isTypeCustom(param.type)) {
             const typeText = param.type;
-            let customProps: { enumValues?: EnumValues; subParams?: ParsedParameters } = {};
+            const customProps: { enumValues?: EnumValues; subParams?: ParsedParameters } = {};
             
             if (isEnumUsingMorph(sourceFile, typeText)) {
                 customProps.enumValues = parseEnumStatementUsingMorph(sourceFile, typeText);
@@ -300,8 +340,8 @@ function parseRootInputParamsType(typeString: string, sourceFile: SourceFile): P
     return [];
 }
 
-function getTypeFromTypeNodeUsingMorph(typeNode: any): string {
-    if (!typeNode || !typeNode.getText) {
+function getTypeFromTypeNodeUsingMorph(typeNode: unknown): string {
+    if (!hasGetText(typeNode)) {
         return '';
     }
     
@@ -334,48 +374,55 @@ export function extractOperationsInputParamsSchema(absolutePath: string, sdkFunc
         if (returnStatements.length > 0) {
             const returnStatement = returnStatements[0];
             const expression = returnStatement.getExpression();
-            if (expression) {
+            if (expression && hasGetKind(expression)) {
                 // The expression is the object literal itself
-                let objectLiteral: any = expression;
+                let objectLiteral: unknown = expression;
                 
                 // If it's not an object literal, try to get the first child
                 if (expression.getKind() !== SyntaxKind.ObjectLiteralExpression) {
                     objectLiteral = expression.getFirstChildByKind(SyntaxKind.ObjectLiteralExpression);
                 }
                 
-                if (objectLiteral) {
-                    const methodDeclarations = objectLiteral.getDescendantsOfKind(SyntaxKind.MethodDeclaration) as any[];
+                if (objectLiteral && hasGetDescendantsOfKind(objectLiteral)) {
+                    const methodDeclarations = objectLiteral.getDescendantsOfKind(SyntaxKind.MethodDeclaration);
                     
                     for (const methodDeclaration of methodDeclarations) {
+                        if (!hasGetName(methodDeclaration)) continue;
+                        
                         const operationName = methodDeclaration.getName();
                         const operationData: OperationSchema = { name: operationName, inputParams: [] };
-                        const parameters = methodDeclaration.getParameters() as any[];
                         
-                        for (const param of parameters) {
-                            const paramName = param.getName();
-                            if (paramName === 'options') continue;
+                        if (hasGetParameters(methodDeclaration)) {
+                            const parameters = methodDeclaration.getParameters();
                             
-                            const paramTypeNode = param.getTypeNode();
-                            if (paramTypeNode) {
-                                // Get the type as text from ts-morph
-                                const typeText = getTypeFromTypeNodeUsingMorph(paramTypeNode);
+                            for (const param of parameters) {
+                                if (!hasGetName(param)) continue;
                                 
-                                // Parse the type to extract parameters
-                                const parsedRootParameters = parseRootInputParamsType(typeText, sourceFile);
+                                const paramName = param.getName();
+                                if (paramName === 'options') continue;
                                 
-                                parsedRootParameters.forEach(i => {
-                                    if (isTypeCustom(i.type)) {
-                                        const parsedParams = isEnumUsingMorph(sourceFile, i.type) ?
-                                            { enumValues: parseEnumStatementUsingMorph(sourceFile, i.type) } :
-                                            isEnumAsConstUsingMorph(sourceFile, i.type) ?
-                                                { enumValues: parseEnumAsConstStatementUsingMorph(sourceFile, i.type) } :
-                                                { subParams: parseCustomTypeUsingMorph(sourceFile, i.type) };
-                                        
-                                        operationData.inputParams.push({ ...i, ...parsedParams });
-                                    } else if (i.type !== 'never') {
-                                        operationData.inputParams.push({ ...i });
-                                    }
-                                });
+                                if (hasGetTypeNode(param)) {
+                                    const paramTypeNode = param.getTypeNode();
+                                    // Get the type as text from ts-morph
+                                    const typeText = getTypeFromTypeNodeUsingMorph(paramTypeNode);
+                                    
+                                    // Parse the type to extract parameters
+                                    const parsedRootParameters = parseRootInputParamsType(typeText, sourceFile);
+                                    
+                                    parsedRootParameters.forEach(i => {
+                                        if (isTypeCustom(i.type)) {
+                                            const parsedParams = isEnumUsingMorph(sourceFile, i.type) ?
+                                                { enumValues: parseEnumStatementUsingMorph(sourceFile, i.type) } :
+                                                isEnumAsConstUsingMorph(sourceFile, i.type) ?
+                                                    { enumValues: parseEnumAsConstStatementUsingMorph(sourceFile, i.type) } :
+                                                    { subParams: parseCustomTypeUsingMorph(sourceFile, i.type) };
+                                            
+                                            operationData.inputParams.push({ ...i, ...parsedParams });
+                                        } else if (i.type !== 'never') {
+                                            operationData.inputParams.push({ ...i });
+                                        }
+                                    });
+                                }
                             }
                         }
                         

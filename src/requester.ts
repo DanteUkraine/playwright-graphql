@@ -1,8 +1,8 @@
+import { print, DocumentNode } from 'graphql';
 import {
     APIRequestContext,
     APIResponse
 } from 'playwright-core';
-import { print, DocumentNode } from 'graphql';
 import 'json-bigint-patch';
 
 type PostOptionsType = NonNullable<Parameters<APIRequestContext['post']>[1]>;
@@ -12,7 +12,7 @@ type PlaywrightRequesterOptions = {
     failOnEmptyData?: boolean;
 } & Omit<PostOptionsType, 'data'>;
 
-type Requester<C = {}> = <R, V>(doc: DocumentNode, vars?: V, options?: C) => Promise<R> | AsyncIterable<R>;
+type Requester<C = Record<string, unknown>> = <R, V>(doc: DocumentNode, vars?: V, options?: C) => Promise<R> | AsyncIterable<R>;
 
 type RequesterOptions = { gqlEndpoint?: string, rawResponse?: boolean };
 
@@ -21,7 +21,7 @@ type GqlEndpoint = string;
 type RequestOptions = {
     client: APIRequestContext,
     gqlEndpoint: string,
-    variables: any,
+    variables: unknown,
     doc: DocumentNode,
     options?: Omit<PostOptionsType, 'data'>
 };
@@ -36,7 +36,7 @@ const returnRawResponseStrategy = async <R>(
     response: APIResponse,
 ): Promise<R> => {
     try {
-        return (await response.json());
+        return (await response.json()) as R;
     } catch (e) {
         throw new Error(await buildMessage(e, response));
     }
@@ -46,30 +46,33 @@ const returnDataResponseStrategy = async <R>(
     response: APIResponse,
     options?: PlaywrightRequesterOptions,
 ): Promise<R> => {
-    let json;
+    let json: unknown;
     try {
         json = await response.json();
     } catch (e) {
         throw new Error(await buildMessage(e, response));
     }
 
+    const jsonObj = json as { data?: R | null | undefined; [key: string]: unknown };
+
     if (options?.returnRawJson) {
-        return json;
+        return jsonObj as R;
     }
 
-    if ([undefined, null].includes(json.data)) {
+    if (jsonObj.data === undefined || jsonObj.data === null) {
         const failOnEmptyData: boolean = options?.failOnEmptyData ?? true;
 
         if (!failOnEmptyData) {
-            return json;
+            return jsonObj as R;
         }
 
-        const formattedJsonString = JSON.stringify(JSON.parse(await response.text()), null, '  ');
+        const responseText = await response.text();
+        const formattedJsonString = JSON.stringify(JSON.parse(responseText), null, '  ');
 
         throw new Error(`No data presented in the GraphQL response: ${formattedJsonString}`);
     }
 
-    return json.data;
+    return jsonObj.data as R;
 }
 
 
@@ -83,8 +86,8 @@ function doPostRequest(requestParams: RequestOptions): Promise<APIResponse> {
 
 function initRequest(requestHandler?: (request: () => Promise<APIResponse>) => Promise<APIResponse>): (requestParams: RequestOptions) => Promise<APIResponse> {
     return requestHandler ?
-        (requestParams: RequestOptions) => requestHandler(() => doPostRequest(requestParams)) :
-        (requestParams: RequestOptions) => doPostRequest(requestParams);
+        (requestParams: RequestOptions): Promise<APIResponse> => requestHandler(() => doPostRequest(requestParams)) :
+        (requestParams: RequestOptions): Promise<APIResponse> => doPostRequest(requestParams);
 }
 
 export function getSdkRequester(
@@ -132,9 +135,13 @@ export function getSdkRequester(
 
 function validateDocument(doc: DocumentNode): void {
     // Valid document should contain *single* query or mutation unless it's has a fragment
+    const operationDefinitions = doc.definitions.filter(
+        (d) => (d.kind as string) === operationDefinition
+    ) as Array<{ kind: string; operation: string; [key: string]: unknown }>;
+    
     if (
-        doc.definitions.filter(
-            (d) => d.kind === operationDefinition && validDocDefOps.includes(d.operation),
+        operationDefinitions.filter(
+            (d) => validDocDefOps.includes(d.operation),
         ).length !== 1
     ) {
         throw new Error(
@@ -142,20 +149,21 @@ function validateDocument(doc: DocumentNode): void {
         );
     }
 
-    const definition = doc.definitions[0];
+    const definition = operationDefinitions[0];
 
     // Valid document should contain *OperationDefinition*
-    if (definition.kind !== operationDefinition) {
+    if ((definition.kind) !== operationDefinition) {
         throw new Error('DocumentNode passed to Playwright must contain single query or mutation');
     }
 
-    if (definition.operation === subscription) {
+    if ((definition.operation) === subscription) {
         throw new Error('Subscription requests through SDK interface are not supported');
     }
 }
 
-async function buildMessage(e: any, response: APIResponse): Promise<string> {
-    return `${(e as Error).message}
+async function buildMessage(e: unknown, response: APIResponse): Promise<string> {
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    return `${errorMessage}
                 \nStatus code: ${response.status()}
                 \nHeaders: ${JSON.stringify(response.headers())}
                 \nResponse body is not a json but: ${await response.text()}`

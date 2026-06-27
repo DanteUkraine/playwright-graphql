@@ -1,15 +1,16 @@
 import { writeFile } from 'fs/promises';
 import { resolve } from 'path';
 
-export function coverageLogger<T extends object>(obj: T, loggerStashDir: string): T {
+export function coverageLogger<T extends Record<string, unknown>>(obj: T, loggerStashDir: string): T {
     return new Proxy(obj, {
-        get(target: T, prop: string) {
-            const originalMethod = (target as any)[prop];
+        get(target: T, prop: string): unknown {
+            const originalMethod = (target as Record<string, unknown>)[prop];
 
             if (typeof originalMethod === 'function') {
-                return async function (...args: any[]) {
+                return async function (...args: unknown[]) {
                     const logCoverage = writeFile(resolve(loggerStashDir, prop), `${JSON.stringify({ name: prop, inputParams: args })},`, { flag: 'a' });
-                    const gqlResponse = await originalMethod.apply(target, args);
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                    const gqlResponse = await (originalMethod as (...args: unknown[]) => Promise<unknown>).apply(target, args);
                     await logCoverage;
                     return gqlResponse;
                 };

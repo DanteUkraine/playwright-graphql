@@ -1,6 +1,6 @@
+import { buildParamCoverageString } from './coverage-calculation-helpers';
 import { Summary } from './report';
 import { OperationSchema } from './types';
-import { buildParamCoverageString } from './coverage-calculation-helpers';
 
 export function generateHtmlReport(summary: Summary, operationsSchema: OperationSchema[]): string {
     return `
@@ -123,10 +123,10 @@ export function generateHtmlReport(summary: Summary, operationsSchema: Operation
                       <div class="operation ${isCovered ? 'covered' : 'uncovered'}">
                           <h3>${operation.name} 
                               <span style="float:right; color:${isCovered ? 'var(--covered-color)' : 'var(--uncovered-color)'};">
-                                  ${coverageInfo?.argsCoverage || 'N/A'}
+                                  ${coverageInfo?.argsCoverage ?? 'N/A'}
                               </span>
                           </h3>
-                          <pre class="${argsMap.trim() ? '' : 'empty-field'}">${argsMap.trim() || 'No arguments provided'}</pre>
+                          <pre class="${argsMap.trim() ? '' : 'empty-field'}">${argsMap.trim() ?? 'No arguments provided'}</pre>
                       </div>`;
     }).join('')}
           </div>

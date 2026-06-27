@@ -30,7 +30,7 @@ export function runCommand(
             if (code === 0) {
                 resolve({ stdout: stdout.join('\n'), stderr: stderr.join('\n') });
             } else {
-                reject(new Error(`Command "${command}" exited with code ${code}.\nStderr: ${stderr}`));
+                reject(new Error(`Command "${command}" exited with code ${code}.\nStderr: ${stderr.join('\n')}`));
             }
         });
     });

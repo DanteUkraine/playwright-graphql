@@ -1,5 +1,7 @@
 import { OperationSchema, ParsedParameter, ParsedParameters } from "./types";
 
+type InputParamValue = unknown;
+
 export function floorDecimal(value: number, decimalPlaces: number): number {
     //The multiplier is calculated as 10n, where n is the number of decimal places you want to round to.
     const multiplier = Math.pow(10, decimalPlaces);
@@ -7,32 +9,34 @@ export function floorDecimal(value: number, decimalPlaces: number): number {
 }
 
 
-function incrementCounterForParamRecursively(paramSchema: ParsedParameter, inputParam: any): void {
+function incrementCounterForParamRecursively(paramSchema: ParsedParameter, inputParam: InputParamValue): void {
     paramSchema.called++;
 
-    if (paramSchema.subParams && inputParam) {
-        Object.keys(inputParam).forEach((key: string) => {
+    if (paramSchema.subParams && inputParam && typeof inputParam === 'object' && inputParam !== null) {
+        const inputObj = inputParam as Record<string, InputParamValue>;
+        Object.keys(inputObj).forEach((key: string) => {
             const schema = paramSchema.subParams?.find((i) => i.key === key);
             if (schema) {
-                incrementCounterForParamRecursively(schema, inputParam[key]);
+                incrementCounterForParamRecursively(schema, inputObj[key]);
             }
         });
         return;
     }
 
-    if (paramSchema.enumValues && inputParam) {
-        const schema = paramSchema.enumValues.find(i => i.value == inputParam);
+    if (paramSchema.enumValues && inputParam !== undefined && inputParam !== null) {
+        const schema = paramSchema.enumValues.find(i => i.value === inputParam);
         if (schema) schema.called++;
     }
 }
 
-export function incrementCountersInOperationSchema(schema: OperationSchema, inputParams: any[]): void {
+export function incrementCountersInOperationSchema(schema: OperationSchema, inputParams: InputParamValue[]): void {
     inputParams.forEach((param) => {
-        if (param) {
-            Object.keys(param).forEach((key) => {
+        if (param && typeof param === 'object' && param !== null) {
+            const paramObj = param as Record<string, InputParamValue>;
+            Object.keys(paramObj).forEach((key) => {
                 const paramSchema = schema.inputParams.find(i => i.key === key);
                 if (paramSchema) {
-                    incrementCounterForParamRecursively(paramSchema, param[key]);
+                    incrementCounterForParamRecursively(paramSchema, paramObj[key]);
                 }
             });
         }
@@ -46,7 +50,7 @@ function putCoverSign(called: number): string {
 export function calculateOperationCoverage(params: ParsedParameters): number {
     let totalCoverageItems = 0;
     let coveredItems = 0;
-    const incrementation = (i: ParsedParameter) => {
+    const incrementation = (i: ParsedParameter): void => {
         totalCoverageItems++;
         if (i.called > 0) coveredItems++;
         if (i.subParams) {
