@@ -5,8 +5,8 @@ import { writeFile, mkdir } from 'fs/promises';
 import { dirname, resolve, parse, posix, join } from 'path';
 
 import { generate, loadCodegenConfig, type CodegenConfig } from '@graphql-codegen/cli';
-import { printSchema, buildClientSchema, getIntrospectionQuery } from 'graphql';
 import gqlg from 'gql-generator';
+import { printSchema, buildClientSchema, getIntrospectionQuery } from 'graphql';
 import prettier from 'prettier';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -177,7 +177,8 @@ async function fetchSchemaWithIntrospection(url: string, headers?: string[]): Pr
         throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const result = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const result: { data?: unknown; errors?: unknown } = await response.json();
     
     if (result.errors) {
         throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
@@ -185,7 +186,8 @@ async function fetchSchemaWithIntrospection(url: string, headers?: string[]): Pr
     
     // Convert introspection result to schema string
     // buildClientSchema takes the introspection result data and creates a GraphQLSchema
-    const clientSchema = buildClientSchema(result.data);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+    const clientSchema = buildClientSchema(result.data as Record<string, unknown>);
     return printSchema(clientSchema);
 }
 

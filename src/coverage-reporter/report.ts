@@ -11,10 +11,10 @@ import {
   calculateTotalArgsCoverage,
   floorDecimal
 } from './coverage-calculation-helpers';
+import { CoverageCall } from './coverageLogger';
 import { getPathToTmpCoverageStash } from './coverageStashPath';
 import { extractOperationsInputParamsSchema } from './gql-client-parser';
 import { generateHtmlReport } from './html-generator';
-import { CoverageCall } from './coverageLogger';
 import { OperationSchema } from './types';
 
 function isFileExists(path: string): Promise<boolean> {
