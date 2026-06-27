@@ -35,5 +35,5 @@ jobs:
         run: npm test
         timeout-minutes: 5
       - name: Verify ESLint
-        run: npx eslint src/**/*.ts
+        run: npm run lint
       - run: echo "✅ All checks passed on ${{ matrix.platform }} with Node ${{ matrix.node }}"
