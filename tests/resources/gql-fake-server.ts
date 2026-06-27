@@ -1,73 +1,261 @@
-import { createServer, Server, IncomingHttpHeaders } from 'http';
-import { graphql, buildSchema } from 'graphql';
+import { createServer, Server, IncomingMessage, ServerResponse, IncomingHttpHeaders } from 'http';
+import { graphql, buildSchema, GraphQLSchema } from 'graphql';
 
-const schema = buildSchema(`
+// Types for request tracking
+export interface RequestInfo {
+    headers: IncomingHttpHeaders;
+    body: string;
+    timestamp: Date;
+}
+
+// Track all requests for debugging
+export const receivedRequests: RequestInfo[] = [];
+
+// Default schema with more realistic GraphQL types
+const defaultSchema = buildSchema(`
   type Query {
     hello: String
+    user(id: ID!): User
+    users: [User!]!
+  }
+
+  type Mutation {
+    createUser(name: String!): User
+  }
+
+  type User {
+    id: ID!
+    name: String!
+    email: String!
   }
 `);
 
-const rootValue = {
+const defaultRootValue = {
     hello: () => 'Hello from the fake GraphQL server!',
+    user: ({ id }: { id: string }) => ({
+        id,
+        name: `User ${id}`,
+        email: `user${id}@example.com`
+    }),
+    users: () => [
+        { id: '1', name: 'Alice', email: 'alice@example.com' },
+        { id: '2', name: 'Bob', email: 'bob@example.com' }
+    ],
+    createUser: ({ name }: { name: string }) => ({
+        id: Date.now().toString(),
+        name,
+        email: `${name.toLowerCase()}@example.com`
+    })
 };
 
+// Allow schema customization for different test scenarios
+let currentSchema: GraphQLSchema = defaultSchema;
+let currentRootValue: any = defaultRootValue;
+
+// Server instance
 let server: Server | null = null;
+let currentPort: number | null = null;
+
+// Track the last request headers for backwards compatibility
 export let lastRequestHeaders: IncomingHttpHeaders | undefined;
 
-export async function startFakeGraphQLServer(port: number = 4000): Promise<void> {
+/**
+ * Sets a custom schema for the fake server
+ * @param schemaString - GraphQL schema definition string
+ * @param rootValue - Root value object for resolvers
+ */
+export function setFakeServerSchema(schemaString: string, rootValue: any = {}): void {
+    currentSchema = buildSchema(schemaString);
+    currentRootValue = { ...defaultRootValue, ...rootValue };
+}
 
+/**
+ * Resets the schema to default
+ */
+export function resetFakeServerSchema(): void {
+    currentSchema = defaultSchema;
+    currentRootValue = defaultRootValue;
+}
+
+/**
+ * Gets the current server port
+ */
+export function getCurrentPort(): number | null {
+    return currentPort;
+}
+
+/**
+ * Gets the server URL (e.g., 'http://localhost:4000')
+ */
+export function getServerUrl(): string | null {
+    if (currentPort === null) return null;
+    return `http://localhost:${currentPort}`;
+}
+
+/**
+ * Starts the fake GraphQL server
+ * @param port - Port to listen on (defaults to 0 for random port)
+ * @returns Promise that resolves when server is ready
+ */
+export async function startFakeGraphQLServer(port: number = 0): Promise<void> {
     return new Promise((resolve, reject) => {
-        server = createServer((req, res) => {
+        // Reset tracking
+        receivedRequests.length = 0;
+        lastRequestHeaders = undefined;
+
+        server = createServer((req: IncomingMessage, res: ServerResponse) => {
+            // Track request headers
             lastRequestHeaders = req.headers;
+
+            // Log the request for debugging
+            const requestInfo: RequestInfo = {
+                headers: req.headers,
+                body: '',
+                timestamp: new Date()
+            };
+
+            if (req.method === 'GET' && req.url === '/health') {
+                // Health check endpoint
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
+                return;
+            }
 
             if (req.method === 'POST') {
                 let body = '';
-                req.on('data', (chunk) => {
-                    body += chunk;
+
+                req.on('data', (chunk: Buffer) => {
+                    body += chunk.toString();
+                    requestInfo.body = body;
                 });
 
                 req.on('end', async () => {
-                    try {
-                        const { query } = JSON.parse(body);
+                    receivedRequests.push(requestInfo);
 
-                        const result = await graphql({ schema, source: query, rootValue });
+                    try {
+                        // Parse JSON body
+                        let requestBody: { query: string; variables?: any };
+                        try {
+                            requestBody = JSON.parse(body);
+                        } catch (parseError) {
+                            res.writeHead(400, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                errors: [{ message: 'Invalid JSON body' }]
+                            }));
+                            return;
+                        }
+
+                        // Validate query exists
+                        if (!requestBody.query) {
+                            res.writeHead(400, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                errors: [{ message: 'Missing query in request body' }]
+                            }));
+                            return;
+                        }
+
+                        // Execute GraphQL query
+                        const result = await graphql({
+                            schema: currentSchema,
+                            source: requestBody.query,
+                            rootValue: currentRootValue,
+                            variableValues: requestBody.variables
+                        });
 
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify(result));
                     } catch (error) {
-
-                        res.writeHead(500);
-                        res.end(JSON.stringify({ error: (error as Error).message }));
+                        console.error('GraphQL execution error:', error);
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({
+                            errors: [{ message: (error as Error).message }]
+                        }));
                     }
                 });
+            } else if (req.method === 'GET') {
+                // Handle GET requests to GraphQL endpoint
+                res.writeHead(405, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    errors: [{ message: 'Method not allowed, use POST' }]
+                }));
             } else {
-                res.writeHead(404);
-                res.end();
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    errors: [{ message: 'Not found' }]
+                }));
             }
         });
 
         server.listen(port, () => {
+            const address = server?.address();
+            if (address && typeof address !== 'string') {
+                currentPort = address.port;
+            }
             resolve();
         });
 
-        server.on('error', (err) => {
-            console.error('Error starting server:', err);
-            reject(err);
+        server.on('error', (err: NodeJS.ErrnoException) => {
+            if (err.code === 'EADDRINUSE') {
+                reject(new Error(`Port ${port} is already in use`));
+            } else {
+                console.error('Error starting server:', err);
+                reject(err);
+            }
         });
     });
 }
 
-
+/**
+ * Stops the fake GraphQL server
+ * @returns Promise that resolves when server is stopped
+ */
 export function stopFakeGraphQLServer(): Promise<void> {
     return new Promise((resolve, reject) => {
         if (!server) {
+            currentPort = null;
             return resolve();
         }
-        server.close((err) => {
+
+        server.close((err?: Error) => {
+            server = null;
+            currentPort = null;
             if (err) {
+                console.error('Error stopping server:', err);
                 return reject(err);
             }
             resolve();
         });
+
+        // Forcefully shutdown after timeout to prevent hangs
+        setTimeout(() => {
+            if (server) {
+                server.removeAllListeners();
+                server = null;
+                currentPort = null;
+                resolve();
+            }
+        }, 5000);
     });
+}
+
+/**
+ * Clears all tracked requests
+ */
+export function clearReceivedRequests(): void {
+    receivedRequests.length = 0;
+}
+
+/**
+ * Gets all received requests for debugging
+ */
+export function getReceivedRequests(): RequestInfo[] {
+    return [...receivedRequests];
+}
+
+/**
+ * Gets the last received request
+ */
+export function getLastRequest(): RequestInfo | null {
+    if (receivedRequests.length === 0) return null;
+    return receivedRequests[receivedRequests.length - 1];
 }
