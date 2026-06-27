@@ -36,10 +36,12 @@ Please be respectful and inclusive in all interactions.
 
 Before you begin, ensure you have the following installed:
 
-- **Node.js**: >= 18.x (LTS recommended)
+- **Node.js**: >= 18.x (LTS recommended). **Tested on Node.js 22 LTS and 24**
 - **npm**: >= 9.x (comes with Node.js)
 - **TypeScript**: >= 6.0.3
 - **Git**: Latest version
+
+> **Note on Node.js 22**: This project includes automatic fallback for schema fetching when `get-graphql-schema` (which uses node-fetch@2.x) fails due to Node.js 22 compatibility issues. The fallback uses native fetch and works transparently - no configuration needed.
 
 ### Quick Start
 
@@ -58,7 +60,10 @@ npm run build
 npm test
 
 # Verify ESLint compliance
-npx eslint src/**/*.ts
+npm run lint
+
+# Auto-fix ESLint issues
+npm run lint:fix
 ```
 
 ---
@@ -108,7 +113,7 @@ npm run build
 npm test
 
 # Check ESLint
-npx eslint src/**/*.ts
+npm run lint
 ```
 
 All commands should complete successfully.
@@ -186,7 +191,13 @@ playwright-graphql/
 This project uses **ESLint** with strict `@typescript-eslint` rules. Run the linter to check your code:
 
 ```bash
-npx eslint src/**/*.ts
+npm run lint
+```
+
+For auto-fixing common issues:
+
+```bash
+npm run lint:fix
 ```
 
 ### Key ESLint Rules

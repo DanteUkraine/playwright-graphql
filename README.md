@@ -12,7 +12,7 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 ![DEMO](docs/gql-autocomplete-demo.gif)
 ## ⚙️ Prerequisites
 
-- **Node.js**: >= 18.x (required for ESM support)
+- **Node.js**: >= 18.x (required for ESM support). **Tested on Node.js 22 LTS and 24**
 - **TypeScript**: >= 6.0.3 (required for ESM and new language features)
 - **@playwright/test**: >= 1.44.x (peer dependency)
 
@@ -27,6 +27,7 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 - ✅ Full ESM compatibility with @graphql-codegen/cli@7.1.3
 - ✅ Complete ts-morph AST migration for type safety
 - ✅ 100% ESLint compliant with strict type checking
+- ✅ **Node.js 22 LTS support** with automatic fallback for schema fetching
 
 The built-in CLI simplifies code generation process to one simple command.
 ```bash
@@ -37,7 +38,7 @@ playwright-graphql --schema schema.gql
 
 ## 🆕 What's New in 2.3.0-rc1
 
-This release focuses on **quality, type safety, and modern module support** without introducing breaking changes.
+This release focuses on **quality, type safety, modern module support, and Node.js 22 compatibility** without introducing breaking changes.
 
 ### ✨ Major Improvements
 
@@ -47,6 +48,7 @@ This release focuses on **quality, type safety, and modern module support** with
 | **ts-morph Migration** | Complete AST migration from TypeScript Compiler API to ts-morph | ✅ Better type safety & maintainability |
 | **Type Safety** | Comprehensive type safety with zero `any` types | ✅ Catches errors at compile time |
 | **ESLint Enforcement** | 100% compliance with strict @typescript-eslint rules | ✅ Consistent code quality |
+| **Node.js 22 Support** | Automatic fallback schema fetching when get-graphql-schema fails | ✅ Works on Node.js 22+ |
 
 ### 📦 Dependency Updates
 
@@ -63,6 +65,8 @@ No breaking changes! This is a quality-focused release.
 **For ESM projects**: The library now fully supports ESM. Ensure your `package.json` has `"type": "module"` and use `.mjs` extensions or configure your bundler appropriately.
 
 **For CommonJS projects**: No changes needed - backward compatibility is maintained.
+
+**For Node.js 22 users**: This release includes automatic fallback schema fetching. If `get-graphql-schema` fails (due to node-fetch@2.x compatibility issues), the CLI will automatically use native fetch with introspection query. No configuration needed - it just works!
 
 For detailed changes, see [CHANGELOG.md](./CHANGELOG.md).
 
