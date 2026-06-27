@@ -2,7 +2,7 @@
 
 import { existsSync } from 'fs';
 import { writeFile, mkdir } from 'fs/promises';
-import { dirname, resolve, parse, posix } from 'path';
+import { dirname, resolve, parse, posix, join } from 'path';
 
 import { generate, loadCodegenConfig, type CodegenConfig } from '@graphql-codegen/cli';
 import gqlg from 'gql-generator';
@@ -142,6 +142,10 @@ async function ensureDirectoryExists(filePath: string): Promise<void> {
     }
 }
 
+function getGetGraphqlSchemaPath(): string {
+    return join(__dirname, '../../../node_modules/.bin/get-graphql-schema');
+}
+
 async function getSchemasFromUrls(url: string[], schema: string[], header: string[] | undefined): Promise<boolean> {
     if (url.length === schema.length) {
         const apiCalls = url.map((url, index) => ({
@@ -153,10 +157,11 @@ async function getSchemasFromUrls(url: string[], schema: string[], header: strin
 
             await ensureDirectoryExists(i.schema);
 
+            const getGraphqlSchemaPath = getGetGraphqlSchemaPath();
+            const headerArgs = header ? header.map(h => `-h "${h}"`).join(' ') : '';
+            
             await runCommand(
-                header ?
-                    `get-graphql-schema ${i.url} > ${i.schema} ${header.map(h => `-h "${h}"`).join(' ')}` :
-                    `get-graphql-schema ${i.url} > ${i.schema}`
+                `${getGraphqlSchemaPath} ${i.url} > ${i.schema}${headerArgs ? ' ' + headerArgs : ''}`
             );
             log(`Schema generated from "${i.url}" to "${i.schema}".`);
         }));
