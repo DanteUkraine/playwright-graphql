@@ -143,7 +143,7 @@ async function ensureDirectoryExists(filePath: string): Promise<void> {
 }
 
 function getGetGraphqlSchemaPath(): string {
-    return join(__dirname, '../../../node_modules/.bin/get-graphql-schema');
+    return join(__dirname, '../../node_modules/.bin/get-graphql-schema');
 }
 
 async function getSchemasFromUrls(url: string[], schema: string[], header: string[] | undefined): Promise<boolean> {
