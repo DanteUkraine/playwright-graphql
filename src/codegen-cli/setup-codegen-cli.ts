@@ -146,6 +146,15 @@ function getGetGraphqlSchemaPath(): string {
     return join(__dirname, '../../node_modules/.bin/get-graphql-schema');
 }
 
+function isValidUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
 async function getSchemasFromUrls(url: string[], schema: string[], header: string[] | undefined): Promise<boolean> {
     if (url.length === schema.length) {
         const apiCalls = url.map((url, index) => ({
@@ -345,6 +354,34 @@ async function main(): Promise<void> {
             return;
         }
 
+        // Validate URLs if provided
+        if (argv.url) {
+            const urls = argv.url as string[];
+            for (const url of urls) {
+                if (!isValidUrl(url)) {
+                    console.error(`Invalid URL: "${url}". Must be a valid HTTP/HTTPS URL.`);
+                    return;
+                }
+            }
+        }
+
+        // Validate gqlDir is not empty
+        if (!argv.gqlDir || typeof argv.gqlDir !== 'string' || argv.gqlDir.trim() === '') {
+            console.error('--gqlDir must be a non-empty string');
+            return;
+        }
+
+        // Validate gqlFile entries are not empty
+        if (argv.gqlFile) {
+            const gqlFiles = argv.gqlFile as string[];
+            for (const file of gqlFiles) {
+                if (typeof file !== 'string' || file.trim() === '') {
+                    console.error('--gqlFile entries must be non-empty strings');
+                    return;
+                }
+            }
+        }
+
         if (argv.url) {
             const result = await getSchemasFromUrls(argv.url as string[], argv.schema as string[], argv.header as string[]);
 
@@ -353,7 +390,7 @@ async function main(): Promise<void> {
 
         for (const schema of schemas) {
             if (!existsSync(schema)) {
-                log(`Schema file: "${String(argv.schema)}" was not found.`);
+                log(`Schema file: "${schema}" was not found.`);
                 log('Exit with no generated output.');
 
                 return;
