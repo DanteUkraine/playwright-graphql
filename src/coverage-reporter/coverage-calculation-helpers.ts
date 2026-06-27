@@ -92,7 +92,8 @@ export function calculateTotalArgsCoverage(coverageList: string[]): string {
     let count = 0;
 
     for (const coverage of coverageList) {
-        const percentageValue = parseFloat(coverage.replace('%', ''));
+        // Remove % sign using string methods instead of regex
+        const percentageValue = parseFloat(coverage.endsWith('%') ? coverage.slice(0, -1) : coverage);
         totalCoverage += percentageValue;
         count++;
     }

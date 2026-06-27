@@ -39,6 +39,30 @@ export default config;
     await writeFile(resolvedPath, formattedContent, 'utf8');
 }
 
+function isValidIdentifier(key: string): boolean {
+    // Check if a string is a valid JavaScript identifier
+    if (key.length === 0) return false;
+    
+    const firstChar = key[0];
+    if (!(firstChar >= 'a' && firstChar <= 'z' || 
+          firstChar >= 'A' && firstChar <= 'Z' || 
+          firstChar === '_' || firstChar === '$')) {
+        return false;
+    }
+    
+    for (let i = 1; i < key.length; i++) {
+        const char = key[i];
+        if (!(char >= 'a' && char <= 'z' || 
+              char >= 'A' && char <= 'Z' || 
+              char >= '0' && char <= '9' || 
+              char === '_' || char === '$')) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
 function inspectConfig(obj: any, depth = 0): string {
     if (depth > 20) return '{/* Depth limit exceeded */}';
 
@@ -66,9 +90,7 @@ function inspectConfig(obj: any, depth = 0): string {
     if (Object.keys(obj).length === 0) return '{}';
 
     const entries = Object.entries(obj).map(([key, value]) => {
-        const formattedKey = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)
-            ? key
-            : JSON.stringify(key);
+        const formattedKey = isValidIdentifier(key) ? key : JSON.stringify(key);
 
         return `${formattedKey}: ${inspectConfig(value, depth + 1)}`;
     });

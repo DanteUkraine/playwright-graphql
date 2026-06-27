@@ -1,7 +1,3 @@
-// Note: @graphql-codegen/cli v7 uses ESM modules (yargs v18) which don't work
-// well with Jest in the current setup. The loadCodegenConfig tests have been
-// commented out. The CLI itself works correctly with v7.
-
 import { promisify } from 'node:util';
 import { exec } from 'child_process';
 import { readdir, mkdir, rm, writeFile, readFile } from 'fs/promises';
@@ -9,6 +5,8 @@ import { startFakeGraphQLServer, stopFakeGraphQLServer, lastRequestHeaders } fro
 import { existsSync } from 'fs';
 import * as path from 'path';
 import { join } from 'path';
+// Note: loadCodegenConfig tests are commented out due to ESM compatibility issues with Jest.
+// The CLI itself works correctly with @graphql-codegen/cli v7.x.
 // import { loadCodegenConfig } from '@graphql-codegen/cli';
 
 const execAsync = promisify(exec);
@@ -172,6 +170,7 @@ describe('Setup Codegen CLI', () => {
             'File "codegen.ts" generated.'
         ].sort());
 
+        // TODO: Enable when ESM compatibility is resolved
         // const codegen = await loadCodegenConfig({ configFilePath: path.join(testDir, 'codegen.ts') });
 
         // expect(codegen.config.generates).toMatchObject({
@@ -334,6 +333,7 @@ describe('Setup Codegen CLI', () => {
                 `File "codegen.ts" generated.\n`,
         });
 
+        // TODO: Enable when ESM compatibility is resolved
         // const codegen = await loadCodegenConfig({ configFilePath: path.join(testDir, 'codegen.ts') });
 
         // expect(codegen.config.generates).toMatchObject({

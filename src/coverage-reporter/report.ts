@@ -57,8 +57,11 @@ export default class GraphqlCoverageReport implements Reporter {
     this.operationsSchema = extractOperationsInputParamsSchema(absolutePath);
     this.logUncoveredOperations = options.logUncoveredOperations ?? false;
     this.minCoveragePerOperation = options.minCoveragePerOperation ?? 100;
-    this.coverageFilePath = options.coverageFilePath ?? `./${this.apiClientFileName.replace('.ts', '')}-coverage.log`;
-    this.htmlFilePath = options.htmlFilePath ?? `./${this.apiClientFileName.replace('.ts', '')}-coverage.html`;
+    const fileNameWithoutExtension = this.apiClientFileName.endsWith('.ts') 
+        ? this.apiClientFileName.slice(0, -3) 
+        : this.apiClientFileName;
+    this.coverageFilePath = options.coverageFilePath ?? `./${fileNameWithoutExtension}-coverage.log`;
+    this.htmlFilePath = options.htmlFilePath ?? `./${fileNameWithoutExtension}-coverage.html`;
     this.saveGqlCoverageLog = options.saveGqlCoverageLog ?? false;
     this.saveHtmlSummary = options.saveHtmlSummary ?? false;
   }
