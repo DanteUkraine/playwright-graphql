@@ -32,9 +32,8 @@ describe('Coverage logger', () => {
         await proxiedObject.testMethod('test', 42);
 
         const expectedLogPath = resolve(dirStashPath, 'testMethod');
-        const expectedLogContent = `${JSON.stringify({ name: 'testMethod', inputParams: ['test', 42] })},`;
 
-        expect(writeFileMock).toHaveBeenCalledWith(expectedLogPath, expectedLogContent, { flag: 'a' });
+        expect(writeFileMock).toHaveBeenCalledWith(expectedLogPath, `${JSON.stringify({ name: 'testMethod', inputParams: ['test', 42] })}\n`, { flag: 'a' });
     });
 
     test('should ensure logging happens before returning the result', async () => {

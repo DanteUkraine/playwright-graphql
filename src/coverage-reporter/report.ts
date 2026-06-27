@@ -14,6 +14,7 @@ import {
 import { getPathToTmpCoverageStash } from './coverageStashPath';
 import { extractOperationsInputParamsSchema } from './gql-client-parser';
 import { generateHtmlReport } from './html-generator';
+import { CoverageCall } from './coverageLogger';
 import { OperationSchema } from './types';
 
 function isFileExists(path: string): Promise<boolean> {
@@ -78,14 +79,18 @@ export default class GraphqlCoverageReport implements Reporter {
     if (!await isFileExists(this.coverageDir)) throw new Error(`Directory with logged coverage was not found: ${this.coverageDir}`);
     const operationsFiles = await readdir(this.coverageDir);
 
-    type OperationCall = { name: string; inputParams: unknown[] };
-    type OperationCalls = { name: string; calls: OperationCall[] };
+    type OperationCalls = { name: string; calls: CoverageCall[] };
     const coveredOperationsWithArgs: OperationCalls[] = await Promise.all(
         operationsFiles.map(async (fileName) => {
           const operationFile = await readFile(join(this.coverageDir, fileName), { encoding: 'utf8' });
+          // Parse each line as a JSON object (new format: one JSON object per line)
+          const calls = operationFile
+            .split('\n')
+            .filter(line => line.trim() !== '')
+            .map(line => JSON.parse(line) as CoverageCall);
           return {
             name: fileName,
-            calls: JSON.parse(`[${operationFile.slice(0, -1)}]`) as OperationCall[], // .slice(0, -1) because last char always will be a comma.
+            calls
           };
         })
     );
