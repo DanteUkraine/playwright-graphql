@@ -161,7 +161,7 @@ async function getSchemasFromUrls(url: string[], schema: string[], header: strin
             const headerArgs = header ? header.map(h => `-h "${h}"`).join(' ') : '';
             
             await runCommand(
-                `${getGraphqlSchemaPath} ${i.url} > ${i.schema}${headerArgs ? ' ' + headerArgs : ''}`
+                `${getGraphqlSchemaPath} ${headerArgs ? headerArgs + ' ' : ''}${i.url} > ${i.schema}`
             );
             log(`Schema generated from "${i.url}" to "${i.schema}".`);
         }));
