@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync } from 'fs';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, stat } from 'fs/promises';
 import { dirname, resolve, parse, posix, join } from 'path';
 
 import { generate, loadCodegenConfig, type CodegenConfig } from '@graphql-codegen/cli';
@@ -140,6 +140,28 @@ async function ensureDirectoryExists(filePath: string): Promise<void> {
     if (directory.length && !existsSync(directory)) {
         await mkdir(directory, { recursive: true });
     }
+}
+
+async function validateSchemaFiles(schemas: string[]): Promise<boolean> {
+    for (const schema of schemas) {
+        if (!existsSync(schema)) {
+            log(`Schema file: "${schema}" was not found.`);
+            return false;
+        }
+        
+        try {
+            const fileStats = await stat(schema);
+            if (fileStats.size === 0) {
+                log(`Schema file: "${schema}" is empty. Check if the GraphQL endpoint is accessible and returns a valid schema.`);
+                return false;
+            }
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            log(`Error validating schema file: "${schema}": ${errorMessage}`);
+            return false;
+        }
+    }
+    return true;
 }
 
 function getGetGraphqlSchemaPath(): string {
@@ -332,13 +354,10 @@ async function main(): Promise<void> {
             if (!result) return;
         }
 
-        for (const schema of schemas) {
-            if (!existsSync(schema)) {
-                log(`Schema file: "${String(argv.schema)}" was not found.`);
-                log('Exit with no generated output.');
-
-                return;
-            }
+        const areSchemasValid = await validateSchemaFiles(schemas);
+        if (!areSchemasValid) {
+            log('Exit with no generated output.');
+            return;
         }
 
         if (!argv.introspect && !argv.document) {
@@ -370,14 +389,20 @@ async function main(): Promise<void> {
             for (let i = 0; i < schemas.length; i++) {
                 const operationsPath = buildOperationsPath(schemas[i]);
 
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                gqlg({
-                    schemaFilePath: schemas[i],
-                    destDirPath: operationsPath,
-                    depthLimit: argv.depthLimit,
-                    fileExtension: 'gql',
-                    includeCrossReferences: argv.includeCrossReferences,
-                });
+                try {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                    gqlg({
+                        schemaFilePath: schemas[i],
+                        destDirPath: operationsPath,
+                        depthLimit: argv.depthLimit,
+                        fileExtension: 'gql',
+                        includeCrossReferences: argv.includeCrossReferences,
+                    });
+                } catch (error: unknown) {
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    log(`Error generating operations from schema "${schemas[i]}": ${errorMessage}`);
+                    return;
+                }
 
                 if (operationsPaths[i]) {
                     operationsPaths[i].push(convertToGlob(operationsPath));
