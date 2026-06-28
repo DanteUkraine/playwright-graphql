@@ -1,10 +1,7 @@
 # Playwright-graphql
 
-![Version](https://img.shields.io/npm/v/playwright-graphql)
 ![License](https://img.shields.io/npm/l/playwright-graphql)
 ![TypeScript](https://img.shields.io/npm/types/playwright-graphql)
-![Node.js](https://img.shields.io/node/v-lts/playwright-graphql)
-![CI](https://github.com/DanteUkraine/playwright-graphql/actions/workflows/ci.yml/badge.svg)
 
 This library provides Playwright integration with GraphQL and TypeScript for efficient API testing.
 It enables you to generate an auto-generated GraphQL API client with autocomplete functionality.
