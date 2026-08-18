@@ -48,5 +48,5 @@ module.exports = {
     'no-undef': 'off',
     'no-redeclare': 'off',
   },
-  ignorePatterns: ['lib/', 'node_modules/', '*.d.ts', '**/*.test.ts'],
+  ignorePatterns: ['lib/', 'node_modules/', '*.d.ts', '**/*.test.ts', 'jest.config.ts'],
 };

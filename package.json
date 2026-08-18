@@ -1,6 +1,6 @@
 {
   "name": "playwright-graphql",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "This library provide playwright integration with graphql for efficient API tests.",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -49,8 +49,6 @@
     "@graphql-codegen/typescript": "^5.0.6",
     "@graphql-codegen/typescript-generic-sdk": "^5.0.1",
     "@graphql-codegen/typescript-operations": "^5.0.6",
-    "get-graphql-schema": "^2.1.2",
-    "gql-generator": "^2.0.0",
     "json-bigint-patch": "^0.0.9",
     "prettier": "^3.3.3",
     "ts-morph": "^28.0.0",

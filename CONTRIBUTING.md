@@ -41,7 +41,7 @@ Before you begin, ensure you have the following installed:
 - **TypeScript**: >= 6.0.3
 - **Git**: Latest version
 
-> **Note on Node.js 22**: This project includes automatic fallback for schema fetching when `get-graphql-schema` (which uses node-fetch@2.x) fails due to Node.js 22 compatibility issues. The fallback uses native fetch and works transparently - no configuration needed.
+> **Note on Node.js 22**: This project uses native fetch for schema introspection, which is fully compatible with Node.js 22+ without any additional dependencies.
 
 ### Quick Start
 

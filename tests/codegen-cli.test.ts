@@ -73,8 +73,7 @@ describe('Setup Codegen CLI', () => {
 
         expect(lastRequestHeaders).not.toHaveProperty('authorization');
 
-        // With --silent flag, stdout should be empty OR contain only fallback messages if get-graphql-schema fails
-        // On Node.js 22, the fallback is triggered, so we just check it doesn't error
+        // With --silent flag, stdout should be empty
         expect(cliLogs.stderr).toBe('');
     });
 

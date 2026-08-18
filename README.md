@@ -9,9 +9,9 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 ![DEMO](docs/gql-autocomplete-demo.gif)
 ## ⚙️ Prerequisites
 
-- **Node.js**: >= 18.x (required for ESM support). **Tested on Node.js 22 LTS and 24**
+- **Node.js**: >= 22.x (required for ESM support). **Tested on Node.js 22 LTS and 24**
 - **TypeScript**: >= 6.0.3 (required for ESM and new language features)
-- **@playwright/test**: >= 1.44.x (peer dependency)
+- **@playwright/test**: >= 1.62.x (peer dependency)
 
 ---
 
@@ -24,7 +24,7 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 - ✅ Full ESM compatibility with @graphql-codegen/cli@7.1.3
 - ✅ Complete ts-morph AST migration for type safety
 - ✅ 100% ESLint compliant with strict type checking
-- ✅ **Node.js 22 LTS support** with automatic fallback for schema fetching
+- ✅ **Node.js 22 LTS support** with native fetch schema introspection
 
 The built-in CLI simplifies code generation process to one simple command.
 ```bash
@@ -33,7 +33,7 @@ playwright-graphql --schema schema.gql
 
 ---
 
-## 🆕 What's New in 2.3.0-rc1
+## 🆕 What's New in 2.4.0
 
 This release focuses on **quality, type safety, modern module support, and Node.js 22 compatibility** without introducing breaking changes.
 
@@ -45,7 +45,7 @@ This release focuses on **quality, type safety, modern module support, and Node.
 | **ts-morph Migration** | Complete AST migration from TypeScript Compiler API to ts-morph | ✅ Better type safety & maintainability |
 | **Type Safety** | Comprehensive type safety with zero `any` types | ✅ Catches errors at compile time |
 | **ESLint Enforcement** | 100% compliance with strict @typescript-eslint rules | ✅ Consistent code quality |
-| **Node.js 22 Support** | Automatic fallback schema fetching when get-graphql-schema fails | ✅ Works on Node.js 22+ |
+| **Node.js 22 Support** | Native fetch-based schema introspection | ✅ Works on Node.js 22+ |
 
 ### 📦 Dependency Updates
 
@@ -63,7 +63,7 @@ No breaking changes! This is a quality-focused release.
 
 **For CommonJS projects**: No changes needed - backward compatibility is maintained.
 
-**For Node.js 22 users**: This release includes automatic fallback schema fetching. If `get-graphql-schema` fails (due to node-fetch@2.x compatibility issues), the CLI will automatically use native fetch with introspection query. No configuration needed - it just works!
+**For Node.js 22 users**: This release uses native fetch for schema introspection, which is fully compatible with Node.js 22+ without any additional dependencies.
 
 For detailed changes, see [CHANGELOG.md](./CHANGELOG.md).
 
@@ -73,7 +73,7 @@ For detailed changes, see [CHANGELOG.md](./CHANGELOG.md).
 - [Installation](#installation)
 - [Generate type safe client](#generate-type-safe-client)
 - [Add path to your tsconfig](#add-path-to-your-tsconfig)
-- [Create gql fixtures](#create-gql-fixture)
+- [Create gql fixture](#create-gql-fixture)
 - [Code generation with build in CLI](#code-generation-with-build-in-cli)
     - [Raw Response](#return-raw-response-body-instead-of-schema-defined-type)
     - [Get Client signature](#get-client-signature)
@@ -149,10 +149,9 @@ Will generate you next:
 ```
 When you run the command with a GraphQL endpoint URL, the CLI will:
 
-1. Fetch the GraphQL schema from the specified URL and save to the specified file (schema.gql).
-2. Save the schema to the specified file (schema.gql)
-3. Generate GraphQL operations based on the fetched schema
-4. Generate GraphQL type-safe client
+1. Fetch the GraphQL schema from the specified URL and save it to the specified file (schema.gql)
+2. Generate GraphQL operations based on the fetched schema
+3. Generate GraphQL type-safe client
 
 This command is useful when you want to generate or update your schema file directly from a GraphQL endpoint. 
 It combines the schema fetching step with the type-safe client generation, streamlining the setup process 
@@ -316,7 +315,7 @@ Syntax for complex headers:
 
 - `playwright-graphql --url http://localhost:4000/api/graphql -h "Cookies={'Authorization': 'Bearer token'}"`
 
-The same header will be added to each schema introspect API call.
+These headers will be used for all schema introspection API calls.
 
 `playwright-graphql -u http://localhost:4000/api/graphql -u http://localhost:4001/api/graphql -h "Authorization: Bearer common-token" -s schema1.gql -s schema2.gql`
 
@@ -465,8 +464,8 @@ Below is a summary of the available command-line parameters:
 | `--document`    | `-o`  | Glob pattern(s) that will be added to documents.	                                                                                                                                                                                  | array   | *optional*     |
 | `--depthLimit`  |       | Defines the maximum depth of nested fields to include in the generated GraphQL queries.                                                                                                                                            | number  | 20             |
 | `--includeCrossReferences`  |       | As this tool is used for tests, it expands all the fields in a query. There might be recursive fields in the query. So gql-generator ignores the types which have been added in the parent queries already by default. This can be disabled | boolean | false          |
-| `--introspect`  | `-i`  | Turns off auto-generation of operations.                                                                                                                                                                                           | boolean | true           |
-| `--raw`         |       | Generates GraphQL client witch return raw responses.                                                                                                                                                                               | boolean | false          |
+| `--introspect`  | `-i`  | Enable/disable schema introspection to generate operations. Set to false to use only custom operations. | boolean | true           |
+| `--raw`         |       | Generates GraphQL client which returns raw responses. | boolean | false          |
 | `--enumsAsConst`|       | Type safe client will be build with "as const" instead of enum.                                                                                                                                                                    | boolean | false          |
 | `--codegen`     | `-c`  | Path to save the codegen config.                                                                                                                                                                                                   | string  | `codegen.ts`   |
 | `--saveCodegen` |       | Save generated codegen file.                                                                                                                                                                                                       | boolean | false          |
@@ -518,7 +517,7 @@ test('playwright-graphql test', async ({ gql }) => {
 getClient(
   apiContext: APIRequestContext,
   options?: { gqlEndpoint?: string; rawResponse?: boolean },
-  requestHandler?: (request: () => Promise<any>) => Promise<any>
+  requestHandler?: (request: () => Promise<APIResponse>) => Promise<APIResponse>
 );
 
 ```
@@ -529,8 +528,7 @@ Default values for options: `{ gqlEndpoint: '/api/graphql', rawResponse: false }
 
 Set `gqlEndpoint` to customize graphql endpoint.
 
-Set `rawResponse` to return { errors: any[], body: R } instead of R, R represents autogenerated return type from gql schema. 
-This parameter can be used only when `rawRequest: true` is included in `codegen.ts`.
+Set `rawResponse` to return the full response object instead of just the data. This is useful when you need access to both data and errors from the GraphQL response.
 
 
 #### Request Handler Callback
@@ -558,7 +556,7 @@ Collect your custom operations under any directory in your project and pass it t
 
 That will build your client with autogenerated and your custom operations.
 
-To use only your custom operations add introspect flag `-i false`.
+To use only your custom operations, set the introspect flag to false.
 
 - `playwright-graphql --url http://localhost:4000/api/graphql -o src/operations -i false`
 
@@ -627,8 +625,8 @@ Generates a detailed log and an HTML summary report showing the coverage of your
 
 Playwright config file for the GraphQL coverage reporter:
 1. **graphqlFilePath** (required): Path to your autogenerated GraphQL file with types and getClient function (e.g. './gql/graphql.ts').
-2. **coverageFilePath** (optional): Path for the coverage log file. Default: `./gql-coverage.log`.
-3. **htmlFilePath** (optional): Path for the HTML summary report. Default: './gql-coverage.html'.
+2. **coverageFilePath** (optional): Path for the coverage log file. Default: `./${filename}-coverage.log` (based on graphqlFilePath).
+3. **htmlFilePath** (optional): Path for the HTML summary report. Default: `./${filename}-coverage.html` (based on graphqlFilePath).
 4. **logUncoveredOperations** (optional): Whether to log uncovered operations. Default: false.
 5. **minCoveragePerOperation** (optional): Minimum coverage percentage required per operation. Default: 100.
 6. **saveGqlCoverageLog** (optional): Whether to save the detailed coverage log. Default: false.
