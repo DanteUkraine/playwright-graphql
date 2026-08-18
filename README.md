@@ -9,9 +9,11 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 ![DEMO](docs/gql-autocomplete-demo.gif)
 ## ⚙️ Prerequisites
 
-- **Node.js**: >= 22.x (required for ESM support). **Tested on Node.js 22 LTS and 24**
+- **Node.js**: >= 22.x (required for ESM support and ESLint 10). **Tested on Node.js 22 LTS and 24**
 - **TypeScript**: >= 6.0.3 (required for ESM and new language features)
 - **@playwright/test**: >= 1.62.x (peer dependency)
+- **ESLint**: >= 10.x (using flat config)
+- **TypeScript-ESLint**: >= 8.x
 
 ---
 

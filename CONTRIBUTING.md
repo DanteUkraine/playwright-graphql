@@ -36,12 +36,13 @@ Please be respectful and inclusive in all interactions.
 
 Before you begin, ensure you have the following installed:
 
-- **Node.js**: >= 18.x (LTS recommended). **Tested on Node.js 22 LTS and 24**
+- **Node.js**: >= 20.19.0 (required for ESLint 10). **Tested on Node.js 22 LTS and 24**
 - **npm**: >= 9.x (comes with Node.js)
 - **TypeScript**: >= 6.0.3
 - **Git**: Latest version
 
 > **Note on Node.js 22**: This project uses native fetch for schema introspection, which is fully compatible with Node.js 22+ without any additional dependencies.
+> **Note on ESLint**: This project uses ESLint 10 with flat config. Legacy `.eslintrc.*` files are not supported.
 
 ### Quick Start
 
@@ -146,7 +147,7 @@ playwright-graphql/
 ├── docs/
 │   ├── coverage-html.png        # Coverage report screenshot
 │   └── gql-autocomplete-demo.gif # Autocomplete demo
-├── .eslintrc.cjs                # ESLint configuration
+├── eslint.config.js            # ESLint flat configuration
 ├── .github/                     # GitHub configurations
 ├── .gitignore
 ├── .lintstagedrc.cjs            # lint-staged configuration

@@ -172,7 +172,6 @@ async function fetchSchemaWithIntrospection(url: string, headers?: string[]): Pr
         throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result: { data?: unknown; errors?: unknown } = await response.json();
     
     if (result.errors) {
@@ -182,7 +181,6 @@ async function fetchSchemaWithIntrospection(url: string, headers?: string[]): Pr
     // Convert introspection result to schema string
     // buildClientSchema takes the introspection result data and creates a GraphQLSchema
     // The introspection result from a GraphQL server matches the IntrospectionQuery interface
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     const clientSchema = buildClientSchema(result.data as IntrospectionQuery);
     return printSchema(clientSchema);
 }
@@ -465,7 +463,6 @@ async function main(): Promise<void> {
                 const operationsPath = buildOperationsPath(schemas[i]);
 
                 try {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                     gqlg({
                         schemaFilePath: schemas[i],
                         destDirPath: operationsPath,
