@@ -36,7 +36,7 @@ Please be respectful and inclusive in all interactions.
 
 Before you begin, ensure you have the following installed:
 
-- **Node.js**: >= 20.19.0 (required for ESLint 10). **Tested on Node.js 22 LTS and 24**
+- **Node.js**: >= 22.x (required for ESLint 10). **Tested on Node.js 22 LTS and 24**
 - **npm**: >= 9.x (comes with Node.js)
 - **TypeScript**: >= 6.0.3
 - **Git**: Latest version

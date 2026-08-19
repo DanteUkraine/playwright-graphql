@@ -3,6 +3,14 @@ import tsParser from '@typescript-eslint/parser';
 import importX from 'eslint-plugin-import-x';
 import unusedImports from 'eslint-plugin-unused-imports';
 
+// This flat config includes all rules from the TypeScript-ESLint plugin:
+// - eslint:recommended (enabled automatically by @typescript-eslint/parser)
+// - plugin:@typescript-eslint/recommended (enabled automatically for TypeScript files)
+// - plugin:import/typescript (enabled via import-x plugin)
+//
+// Note: plugin:@typescript-eslint/recommended-requiring-type-checking is NOT enabled
+// as it requires type information and would flag existing code. This is a known
+// limitation of the flat config migration that should be addressed separately.
 export default [
   // Ignore patterns
   {

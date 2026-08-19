@@ -73,7 +73,7 @@ describe('Setup Codegen CLI', () => {
 
         expect(lastRequestHeaders).not.toHaveProperty('authorization');
 
-        // With --silent flag, stdout should be empty
+        // With --silent flag, stderr should be empty
         expect(cliLogs.stderr).toBe('');
     });
 

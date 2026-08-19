@@ -172,6 +172,8 @@ async function fetchSchemaWithIntrospection(url: string, headers?: string[]): Pr
         throw new Error(`HTTP error! status: ${response.status}`);
     }
     
+     
+    // GraphQL introspection responses have flexible schemas; type is intentionally broad
     const result: { data?: unknown; errors?: unknown } = await response.json();
     
     if (result.errors) {
