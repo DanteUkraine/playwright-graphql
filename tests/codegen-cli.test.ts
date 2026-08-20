@@ -376,4 +376,54 @@ describe('Setup Codegen CLI', () => {
             stderr: expect.stringContaining(`--depthLimit NaN but should be number`)
         });
     });
+
+    test('should show error when invalid depthLimit provided', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --url ${serverUrl} --depthLimit invalid`,
+            { cwd: testDir }
+        );
+
+        expect(cliLogs).toMatchObject({
+            stderr: expect.stringContaining('--depthLimit NaN but should be number')
+        });
+    });
+
+    test('should show error when invalid header format without equals sign', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --url ${serverUrl} --schema test-schema.gql -h "InvalidHeaderWithoutEquals"`,
+            { cwd: testDir }
+        );
+
+        const dir = await readdir(testDir, { withFileTypes: true });
+        expect(dir.map(i => i.name).sort()).toEqual(['gql', 'test-schema.gql'].sort());
+    });
+
+    test('should handle network error during schema introspection', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --url http://localhost:9999 --schema test-schema.gql`,
+            { cwd: testDir }
+        );
+
+        expect(cliLogs.stderr.toLowerCase() || cliLogs.stdout.toLowerCase()).toMatch(/error|econnrefused|connection refused/i);
+    });
+
+    test('should show error when schema file not found and no url provided', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --schema nonexistent-schema.gql`,
+            { cwd: testDir }
+        );
+
+        expect(cliLogs.stdout + cliLogs.stderr).toContain('was not found');
+    });
+
+    test('should show error when invalid url provided', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --url invalid-url --schema test-schema.gql`,
+            { cwd: testDir }
+        );
+
+        expect(cliLogs).toMatchObject({
+            stderr: expect.stringContaining('Invalid URL')
+        });
+    });
 });

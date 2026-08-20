@@ -223,4 +223,207 @@ describe('getSdkRequester', () => {
         await requester(mockDoc);
         expect(mockClient.post).toHaveBeenCalledTimes(2); // Verify retry happened
     });
+
+    test('should handle malformed JSON response with rawResponse true', async () => {
+      const mockResponse = {
+        json: jest.fn().mockRejectedValue(new SyntaxError('Unexpected token x')),
+        text: jest.fn().mockResolvedValue('not a json'),
+        status: jest.fn().mockReturnValue(500),
+        headers: jest.fn().mockReturnValue({}),
+      } as unknown as jest.Mocked<APIResponse>;
+
+      const mockClient = {
+        post: jest.fn().mockResolvedValue(mockResponse),
+      } as unknown as jest.Mocked<APIRequestContext>;
+
+      const requester = getSdkRequester(mockClient, { gqlEndpoint: '/graphql', rawResponse: true });
+      const mockDoc: DocumentNode = {
+        kind: Kind.DOCUMENT,
+        definitions: [{
+          kind: Kind.OPERATION_DEFINITION,
+          operation: OperationTypeNode.QUERY,
+          selectionSet: {
+            kind: Kind.SELECTION_SET,
+            selections: []
+          }
+        }]
+      };
+
+      await expect(requester(mockDoc)).rejects.toThrow();
+    });
+
+    test('should handle malformed JSON response', async () => {
+      const mockResponse = {
+        json: jest.fn().mockRejectedValue(new SyntaxError('Unexpected token x')),
+        text: jest.fn().mockResolvedValue('not a json'),
+        status: jest.fn().mockReturnValue(500),
+        headers: jest.fn().mockReturnValue({}),
+      } as unknown as jest.Mocked<APIResponse>;
+
+      const mockClient = {
+        post: jest.fn().mockResolvedValue(mockResponse),
+      } as unknown as jest.Mocked<APIRequestContext>;
+
+      const requester = getSdkRequester(mockClient, { gqlEndpoint: '/graphql' });
+      const mockDoc: DocumentNode = {
+        kind: Kind.DOCUMENT,
+        definitions: [{
+          kind: Kind.OPERATION_DEFINITION,
+          operation: OperationTypeNode.QUERY,
+          selectionSet: {
+            kind: Kind.SELECTION_SET,
+            selections: []
+          }
+        }]
+      };
+
+      await expect(requester(mockDoc)).rejects.toThrow();
+    });
+
+    test('should return raw JSON when returnRawJson is true', async () => {
+      const mockResponse = {
+        json: jest.fn().mockResolvedValue({ data: null, errors: [{ message: 'Error' }] }),
+        text: jest.fn(),
+        status: jest.fn(),
+        headers: jest.fn(),
+      } as unknown as jest.Mocked<APIResponse>;
+
+      const mockClient = {
+        post: jest.fn().mockResolvedValue(mockResponse),
+      } as unknown as jest.Mocked<APIRequestContext>;
+
+      const requester = getSdkRequester(mockClient, { gqlEndpoint: '/graphql' });
+      const mockDoc: DocumentNode = {
+        kind: Kind.DOCUMENT,
+        definitions: [{
+          kind: Kind.OPERATION_DEFINITION,
+          operation: OperationTypeNode.QUERY,
+          selectionSet: {
+            kind: Kind.SELECTION_SET,
+            selections: []
+          }
+        }]
+      };
+
+      const result = await requester(mockDoc, {}, { returnRawJson: true });
+      expect(result).toEqual({ data: null, errors: [{ message: 'Error' }] });
+    });
+
+    test('should not fail when failOnEmptyData is false and data is null', async () => {
+      const mockResponse = {
+        json: jest.fn().mockResolvedValue({ data: null, errors: [{ message: 'Error' }] }),
+        text: jest.fn().mockResolvedValue('{"data":null,"errors":[{"message":"Error"}]}'),
+        status: jest.fn(),
+        headers: jest.fn(),
+      } as unknown as jest.Mocked<APIResponse>;
+
+      const mockClient = {
+        post: jest.fn().mockResolvedValue(mockResponse),
+      } as unknown as jest.Mocked<APIRequestContext>;
+
+      const requester = getSdkRequester(mockClient, { gqlEndpoint: '/graphql' });
+      const mockDoc: DocumentNode = {
+        kind: Kind.DOCUMENT,
+        definitions: [{
+          kind: Kind.OPERATION_DEFINITION,
+          operation: OperationTypeNode.QUERY,
+          selectionSet: {
+            kind: Kind.SELECTION_SET,
+            selections: []
+          }
+        }]
+      };
+
+      const result = await requester(mockDoc, {}, { failOnEmptyData: false });
+      expect(result).toEqual({ data: null, errors: [{ message: 'Error' }] });
+    });
+
+    test('should accept document with fragment definitions', async () => {
+      const mockResponse = {
+        json: jest.fn().mockResolvedValue({ data: { user: { id: 1, name: 'Test' } } }),
+        text: jest.fn(),
+        status: jest.fn(),
+        headers: jest.fn(),
+      } as unknown as jest.Mocked<APIResponse>;
+
+      const mockClient = {
+        post: jest.fn().mockResolvedValue(mockResponse),
+      } as unknown as jest.Mocked<APIRequestContext>;
+
+      const requester = getSdkRequester(mockClient, { gqlEndpoint: '/graphql' });
+
+      const mockDoc: DocumentNode = {
+        kind: Kind.DOCUMENT,
+        definitions: [
+          {
+            kind: 'FragmentDefinition' as const,
+            name: { kind: 'Name', value: 'UserFragment' },
+            typeCondition: {
+              kind: 'NamedType' as const,
+              name: { kind: 'Name', value: 'User' }
+            },
+            selectionSet: {
+              kind: Kind.SELECTION_SET,
+              selections: []
+            }
+          },
+          {
+            kind: Kind.OPERATION_DEFINITION,
+            operation: OperationTypeNode.QUERY,
+            name: { kind: 'Name', value: 'GetUser' },
+            selectionSet: {
+              kind: Kind.SELECTION_SET,
+              selections: []
+            }
+          }
+        ]
+      };
+
+      const result = await requester(mockDoc, {});
+      expect(result).toEqual({ user: { id: 1, name: 'Test' } });
+    });
+
+    test('should accept document with fragment and single operation', async () => {
+      const mockResponse = {
+        json: jest.fn().mockResolvedValue({ data: { user: { id: 1 } } }),
+        text: jest.fn(),
+        status: jest.fn(),
+        headers: jest.fn(),
+      } as unknown as jest.Mocked<APIResponse>;
+
+      const mockClient = {
+        post: jest.fn().mockResolvedValue(mockResponse),
+      } as unknown as jest.Mocked<APIRequestContext>;
+
+      const requester = getSdkRequester(mockClient, { gqlEndpoint: '/graphql' });
+
+      const mockDoc: DocumentNode = {
+        kind: Kind.DOCUMENT,
+        definitions: [
+          {
+            kind: 'FragmentDefinition' as const,
+            name: { kind: 'Name', value: 'UserFields' },
+            typeCondition: {
+              kind: 'NamedType' as const,
+              name: { kind: 'Name', value: 'User' }
+            },
+            selectionSet: {
+              kind: Kind.SELECTION_SET,
+              selections: []
+            }
+          },
+          {
+            kind: Kind.OPERATION_DEFINITION,
+            operation: OperationTypeNode.QUERY,
+            name: { kind: 'Name', value: 'GetUser' },
+            selectionSet: {
+              kind: Kind.SELECTION_SET,
+              selections: []
+            }
+          }
+        ]
+      };
+
+      await expect(requester(mockDoc)).resolves.toEqual({ user: { id: 1 } });
+    });
 });
