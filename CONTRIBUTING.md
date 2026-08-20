@@ -127,7 +127,6 @@ All commands should complete successfully.
 playwright-graphql/
 ├── src/
 │   ├── codegen-cli/
-│   │   ├── run-command.ts         # Command execution utilities
 │   │   └── setup-codegen-cli.ts   # CLI entry point and configuration
 │   ├── coverage-reporter/
 │   │   ├── coverage-calculation-helpers.ts  # Coverage calculation logic
@@ -201,17 +200,26 @@ For auto-fixing common issues:
 npm run lint:fix
 ```
 
+### ESLint Configuration
+
+This project uses **ESLint 10 with flat config** (`eslint.config.js`). The following presets are enabled:
+
+- **`flat/eslint-recommended`**: Core ESLint recommended rules for TypeScript files
+- **`flat/recommended`**: TypeScript ESLint recommended rules (includes base TypeScript rules)
+- **Custom rules**: Additional project-specific rules defined in `eslint.config.js`
+
+For import ordering, this project uses **`eslint-plugin-import-x`** (the ESLint 10 compatible fork of `eslint-plugin-import`).
+
 ### Key ESLint Rules
 
 | Rule | Purpose | Example |
 |------|---------|---------|
 | `@typescript-eslint/no-explicit-any` | Avoid `any` types | Use `unknown` or proper types |
 | `@typescript-eslint/no-unsafe-*` | Safe type operations | Add type guards |
-| `import/order` | Consistent imports | Group: built-ins, third-party, local |
+| `import-x/order` | Consistent imports | Group: built-ins, third-party, local |
 | `no-console` | No console statements | Use logger or remove |
 | `eqeqeq` | Strict equality | Use `===` not `==` |
 | `prefer-nullish-coalescing` | Safer default values | Use `??` not `||` |
-| `require-await` | Async functions must await | Add `await Promise.resolve()` |
 | `explicit-function-return-type` | Explicit return types | Always specify return types |
 
 ### Import Order
@@ -389,7 +397,7 @@ Go to the [GitHub repository](https://github.com/DanteUkraine/playwright-graphql
 
 - [ ] Code follows the project's coding standards
 - [ ] All tests pass (`npm test`)
-- [ ] No ESLint errors (`npx eslint src/**/*.ts`)
+- [ ] No ESLint errors (`npm run lint`)
 - [ ] Build succeeds (`npm run build`)
 - [ ] Documentation updated (if applicable)
 - [ ] Tests added for new functionality

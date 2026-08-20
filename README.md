@@ -9,9 +9,9 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 ![DEMO](docs/gql-autocomplete-demo.gif)
 ## ⚙️ Prerequisites
 
-- **Node.js**: >= 22.x (required for ESM support and ESLint 10). **Tested on Node.js 22 LTS and 24**
+- **Node.js**: >= 20.19.0 (required for ESM support and ESLint 10). **Tested on Node.js 22 LTS and 24**
 - **TypeScript**: >= 6.0.3 (required for ESM and new language features)
-- **@playwright/test**: >= 1.62.x (peer dependency)
+- **@playwright/test**: >= 1.44.x (peer dependency)
 - **ESLint**: >= 10.x (using flat config)
 - **TypeScript-ESLint**: >= 8.x
 
@@ -25,8 +25,8 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 - 📈 Optional GraphQL coverage reporting
 - ✅ Full ESM compatibility with @graphql-codegen/cli@7.1.3
 - ✅ Complete ts-morph AST migration for type safety
-- ✅ 100% ESLint compliant with strict type checking
-- ✅ **Node.js 22 LTS support** with native fetch schema introspection
+- ✅ ESLint compliant with strict @typescript-eslint rules
+- ✅ **Node.js 20.19+ support** with native fetch schema introspection
 
 The built-in CLI simplifies code generation process to one simple command.
 ```bash
@@ -37,7 +37,7 @@ playwright-graphql --schema schema.gql
 
 ## 🆕 What's New in 2.4.0
 
-This release focuses on **quality, type safety, modern module support, and Node.js 22 compatibility** without introducing breaking changes.
+This release focuses on **quality, type safety, modern module support, and Node.js 20.19+ compatibility** without introducing breaking changes.
 
 ### ✨ Major Improvements
 
@@ -47,7 +47,7 @@ This release focuses on **quality, type safety, modern module support, and Node.
 | **ts-morph Migration** | Complete AST migration from TypeScript Compiler API to ts-morph | ✅ Better type safety & maintainability |
 | **Type Safety** | Comprehensive type safety with zero `any` types | ✅ Catches errors at compile time |
 | **ESLint Enforcement** | 100% compliance with strict @typescript-eslint rules | ✅ Consistent code quality |
-| **Node.js 22 Support** | Native fetch-based schema introspection | ✅ Works on Node.js 22+ |
+| **Node.js 20.19+ Support** | Native fetch-based schema introspection | ✅ Works on Node.js 20.19+ |
 
 ### 📦 Dependency Updates
 
