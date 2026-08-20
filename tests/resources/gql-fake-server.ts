@@ -164,6 +164,8 @@ export async function startFakeGraphQLServer(port: number = 0): Promise<void> {
             if (address && typeof address !== 'string') {
                 currentPort = address.port;
             }
+            // Prevent server from keeping the Node.js process alive
+            server?.unref();
             resolve();
         });
 
@@ -189,6 +191,10 @@ export function stopFakeGraphQLServer(): Promise<void> {
             return resolve();
         }
 
+        // Clear all tracked requests
+        receivedRequests.length = 0;
+        lastRequestHeaders = undefined;
+
         server.close((err?: Error) => {
             server = null;
             currentPort = null;
@@ -200,14 +206,19 @@ export function stopFakeGraphQLServer(): Promise<void> {
         });
 
         // Forcefully shutdown after timeout to prevent hangs
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
             if (server) {
                 server.removeAllListeners();
                 server = null;
                 currentPort = null;
+                receivedRequests.length = 0;
+                lastRequestHeaders = undefined;
                 resolve();
             }
         }, 5000);
+
+        // Unref the timeout to prevent it from keeping the process alive
+        timeout.unref();
     });
 }
 

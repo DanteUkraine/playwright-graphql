@@ -1,7 +1,7 @@
 import { promisify } from 'node:util';
 import { exec } from 'child_process';
 import { readdir, mkdir, rm, writeFile, readFile } from 'fs/promises';
-import { startFakeGraphQLServer, stopFakeGraphQLServer, lastRequestHeaders, getServerUrl, resetFakeServerSchema } from './resources/gql-fake-server';
+import { startFakeGraphQLServer, stopFakeGraphQLServer, lastRequestHeaders, getServerUrl, resetFakeServerSchema, clearReceivedRequests } from './resources/gql-fake-server';
 import { existsSync } from 'fs';
 import * as path from 'path';
 import { join } from 'path';
@@ -44,6 +44,9 @@ describe('Setup Codegen CLI', () => {
         if (existsSync(testDir)) {
             await rm(testDir, { recursive: true, force: true });
         }
+        // Reset global state between tests
+        resetFakeServerSchema();
+        clearReceivedRequests();
     });
 
     test('generates schema and operations from url no headers', async () => {

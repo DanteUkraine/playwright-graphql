@@ -11,6 +11,16 @@ const config: Config = {
     transformIgnorePatterns: [
         'node_modules/(?!(gql-generator|@graphql-codegen/cli|yargs)/)',
     ],
+    // Enable open handle detection to identify resource leaks
+    detectOpenHandles: true,
+    // Coverage configuration - only applies when --coverage flag is used
+    collectCoverageFrom: [
+        'src/**/*.ts',
+        '!src/**/*.d.ts',
+        '!src/**/*.spec.ts',
+    ],
+    coverageDirectory: 'coverage',
+    coverageReporters: ['text', 'lcov', 'html'],
 };
 
 export default config;
