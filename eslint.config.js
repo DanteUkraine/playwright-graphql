@@ -3,18 +3,16 @@ import tsParser from '@typescript-eslint/parser';
 import importX from 'eslint-plugin-import-x';
 import unusedImports from 'eslint-plugin-unused-imports';
 
-// This flat config includes all rules from the TypeScript-ESLint plugin:
-// - eslint:recommended (enabled automatically by @typescript-eslint/parser)
-// - plugin:@typescript-eslint/recommended (enabled automatically for TypeScript files)
-// - plugin:import/typescript (enabled via import-x plugin)
-//
-// Note: plugin:@typescript-eslint/recommended-requiring-type-checking is NOT enabled
-// as it requires type information and would flag existing code. This is a known
-// limitation of the flat config migration that should be addressed separately.
 export default [
+  // Preset configurations
+  // ESLint core recommended rules for TypeScript files
+  tsESLint.configs['flat/eslint-recommended'],
+  // TypeScript ESLint recommended rules (includes base + eslint-recommended + recommended)
+  ...tsESLint.configs['flat/recommended'],
+
   // Ignore patterns
   {
-    ignores: ['lib/', 'node_modules/', '*.d.ts', '**/*.test.ts', 'jest.config.ts', 'coverage/'],
+    ignores: ['lib/', 'node_modules/', '*.d.ts', '**/*.test.ts', 'jest.config.ts', 'coverage/', 'tests/resources/'],
   },
   // TypeScript files configuration
   {
@@ -33,6 +31,14 @@ export default [
       '@typescript-eslint': tsESLint,
       'import-x': importX,
       'unused-imports': unusedImports,
+    },
+    settings: {
+      // Import-x settings for TypeScript support
+      'import-x/extensions': ['.ts', '.tsx', '.cts', '.mts', '.js', '.jsx', '.cjs', '.mjs'],
+      'import-x/external-module-folders': ['node_modules', 'node_modules/@types'],
+      'import-x/parsers': {
+        '@typescript-eslint/parser': ['.ts', '.tsx', '.cts', '.mts'],
+      },
     },
     rules: {
       // TypeScript specific
