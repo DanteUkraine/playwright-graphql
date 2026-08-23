@@ -2,7 +2,7 @@
 
 import { existsSync } from 'fs';
 import { writeFile, mkdir } from 'fs/promises';
-import { dirname, resolve, parse, posix, join } from 'path';
+import { dirname, resolve, parse, posix } from 'path';
 
 import { generate, loadCodegenConfig, type CodegenConfig } from '@graphql-codegen/cli';
 import gqlg from 'gql-generator';
@@ -13,8 +13,6 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { getPathToTmpCoverageStash } from '../coverage-reporter/coverageStashPath';
-
-import { runCommand } from './run-command';
 
 
 
@@ -144,13 +142,9 @@ async function ensureDirectoryExists(filePath: string): Promise<void> {
     }
 }
 
-function getGetGraphqlSchemaPath(): string {
-    return join(__dirname, '../../node_modules/.bin/get-graphql-schema');
-}
-
 /**
  * Fetches schema from a GraphQL endpoint using native fetch and introspection.
- * This is a fallback when get-graphql-schema fails (e.g., on Node.js 22 with node-fetch@2.x issues).
+ * This is the primary method for schema fetching, compatible with Node.js 18+.
  */
 async function fetchSchemaWithIntrospection(url: string, headers?: string[]): Promise<string> {
     const introspectionQuery = getIntrospectionQuery();
@@ -178,7 +172,8 @@ async function fetchSchemaWithIntrospection(url: string, headers?: string[]): Pr
         throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
+    // GraphQL introspection responses have flexible schemas; type is intentionally broad
     const result: { data?: unknown; errors?: unknown } = await response.json();
     
     if (result.errors) {
@@ -188,7 +183,6 @@ async function fetchSchemaWithIntrospection(url: string, headers?: string[]): Pr
     // Convert introspection result to schema string
     // buildClientSchema takes the introspection result data and creates a GraphQLSchema
     // The introspection result from a GraphQL server matches the IntrospectionQuery interface
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
     const clientSchema = buildClientSchema(result.data as IntrospectionQuery);
     return printSchema(clientSchema);
 }
@@ -211,15 +205,10 @@ async function getSchemasFromUrls(url: string[], schema: string[], header: strin
 
         for (const i of apiCalls) {
             await ensureDirectoryExists(i.schema);
-
-            const getGraphqlSchemaPath = getGetGraphqlSchemaPath();
-            const headerArgs = header ? header.map(h => `-h "${h}"`).join(' ') : '';
             
-            // Try using get-graphql-schema first
             try {
-                await runCommand(
-                    `${getGraphqlSchemaPath} ${headerArgs ? headerArgs + ' ' : ''}${i.url} > ${i.schema}`
-                );
+                const schemaString = await fetchSchemaWithIntrospection(i.url, header);
+                await writeFile(i.schema, schemaString, 'utf8');
                 
                 // Validate that schema file was created and is not empty
                 if (!existsSync(i.schema)) {
@@ -230,35 +219,14 @@ async function getSchemasFromUrls(url: string[], schema: string[], header: strin
                 const { stat: statFn } = await import('fs/promises');
                 const fileStats = await statFn(i.schema);
                 if (fileStats.size === 0) {
-                    throw new Error('Schema file is empty');
+                    log(`Error: Schema file "${i.schema}" is empty. Check if the GraphQL endpoint "${i.url}" is accessible and returns a valid schema.`);
+                    return false;
                 }
                 
                 log(`Schema generated from "${i.url}" to "${i.schema}".`);
             } catch (error) {
-                // Fallback: use native fetch with introspection query
-                // This handles cases where get-graphql-schema fails (e.g., Node.js 22 with node-fetch@2.x issues)
-                try {
-                    log(`Using fallback introspection for "${i.url}" (get-graphql-schema failed)`);
-                    const schemaString = await fetchSchemaWithIntrospection(i.url, header);
-                    await writeFile(i.schema, schemaString, 'utf8');
-                    
-                    if (!existsSync(i.schema)) {
-                        log(`Error: Schema file "${i.schema}" was not created. Check if the GraphQL endpoint "${i.url}" is accessible.`);
-                        return false;
-                    }
-                    
-                    const { stat: statFn } = await import('fs/promises');
-                    const fileStats = await statFn(i.schema);
-                    if (fileStats.size === 0) {
-                        log(`Error: Schema file "${i.schema}" is empty. Check if the GraphQL endpoint "${i.url}" is accessible and returns a valid schema.`);
-                        return false;
-                    }
-                    
-                    log(`Schema generated from "${i.url}" to "${i.schema}" (using fallback).`);
-                } catch (fallbackError) {
-                    log(`Error fetching schema from "${i.url}": ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
-                    return false;
-                }
+                log(`Error fetching schema from "${i.url}": ${error instanceof Error ? error.message : String(error)}`);
+                return false;
             }
         }
 
@@ -326,7 +294,7 @@ async function main(): Promise<void> {
         })
         .option('header', {
             alias: 'h',
-            describe: 'Optional authentication header for the get-graphql-schema command.',
+            describe: 'Optional authentication header(s) for schema introspection.',
             type: 'array'
         })
         .option('schema', {
@@ -497,7 +465,6 @@ async function main(): Promise<void> {
                 const operationsPath = buildOperationsPath(schemas[i]);
 
                 try {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                     gqlg({
                         schemaFilePath: schemas[i],
                         destDirPath: operationsPath,

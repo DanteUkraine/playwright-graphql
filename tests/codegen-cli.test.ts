@@ -1,7 +1,7 @@
 import { promisify } from 'node:util';
 import { exec } from 'child_process';
 import { readdir, mkdir, rm, writeFile, readFile } from 'fs/promises';
-import { startFakeGraphQLServer, stopFakeGraphQLServer, lastRequestHeaders, getServerUrl, resetFakeServerSchema } from './resources/gql-fake-server';
+import { startFakeGraphQLServer, stopFakeGraphQLServer, lastRequestHeaders, getServerUrl, resetFakeServerSchema, clearReceivedRequests } from './resources/gql-fake-server';
 import { existsSync } from 'fs';
 import * as path from 'path';
 import { join } from 'path';
@@ -44,6 +44,9 @@ describe('Setup Codegen CLI', () => {
         if (existsSync(testDir)) {
             await rm(testDir, { recursive: true, force: true });
         }
+        // Reset global state between tests
+        resetFakeServerSchema();
+        clearReceivedRequests();
     });
 
     test('generates schema and operations from url no headers', async () => {
@@ -73,8 +76,7 @@ describe('Setup Codegen CLI', () => {
 
         expect(lastRequestHeaders).not.toHaveProperty('authorization');
 
-        // With --silent flag, stdout should be empty OR contain only fallback messages if get-graphql-schema fails
-        // On Node.js 22, the fallback is triggered, so we just check it doesn't error
+        // With --silent flag, stderr should be empty
         expect(cliLogs.stderr).toBe('');
     });
 
@@ -372,6 +374,56 @@ describe('Setup Codegen CLI', () => {
 
         expect(cliLogs).toMatchObject({
             stderr: expect.stringContaining(`--depthLimit NaN but should be number`)
+        });
+    });
+
+    test('should show error when invalid depthLimit provided', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --url ${serverUrl} --depthLimit invalid`,
+            { cwd: testDir }
+        );
+
+        expect(cliLogs).toMatchObject({
+            stderr: expect.stringContaining('--depthLimit NaN but should be number')
+        });
+    });
+
+    test('should show error when invalid header format without equals sign', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --url ${serverUrl} --schema test-schema.gql -h "InvalidHeaderWithoutEquals"`,
+            { cwd: testDir }
+        );
+
+        const dir = await readdir(testDir, { withFileTypes: true });
+        expect(dir.map(i => i.name).sort()).toEqual(['gql', 'test-schema.gql'].sort());
+    });
+
+    test('should handle network error during schema introspection', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --url http://localhost:9999 --schema test-schema.gql`,
+            { cwd: testDir }
+        );
+
+        expect(cliLogs.stderr.toLowerCase() || cliLogs.stdout.toLowerCase()).toMatch(/error|econnrefused|connection refused/i);
+    });
+
+    test('should show error when schema file not found and no url provided', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --schema nonexistent-schema.gql`,
+            { cwd: testDir }
+        );
+
+        expect(cliLogs.stdout + cliLogs.stderr).toContain('was not found');
+    });
+
+    test('should show error when invalid url provided', async () => {
+        const cliLogs = await execAsync(
+            `node ${cliPath} --url invalid-url --schema test-schema.gql`,
+            { cwd: testDir }
+        );
+
+        expect(cliLogs).toMatchObject({
+            stderr: expect.stringContaining('Invalid URL')
         });
     });
 });

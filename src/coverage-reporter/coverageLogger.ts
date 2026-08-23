@@ -15,7 +15,6 @@ export function coverageLogger<T extends Record<string, unknown>>(obj: T, logger
                 return async function (...args: unknown[]) {
                     const coverageEntry: CoverageCall = { name: prop, inputParams: args };
                     const logCoverage = writeFile(resolve(loggerStashDir, prop), JSON.stringify(coverageEntry) + '\n', { flag: 'a' });
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                     const gqlResponse = await (originalMethod as (...args: unknown[]) => Promise<unknown>).apply(target, args);
                     await logCoverage;
                     return gqlResponse;

@@ -180,7 +180,7 @@ function parseExactTypeUsingMorph(typeNode: unknown): ParsedParameters {
 function findTypeAliasInSourceFile(sourceFile: SourceFile, name: string): TypeAliasDeclaration | undefined {
     try {
         return sourceFile.getTypeAlias(name);
-    } catch (e) {
+    } catch {
         return undefined;
     }
 }

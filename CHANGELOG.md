@@ -38,9 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 📋 Requirements
 
+- **Node.js**: >= 20.19.0 (required for ESLint 10 with flat config)
 - **TypeScript**: >= 6.0.3 (required for ESM and new language features)
 - **@playwright/test**: >= 1.44.x (peer dependency)
-- **Node.js**: >= 18.x (recommended for ESM support)
+- **ESLint**: >= 10.x (using flat config)
+- **TypeScript-ESLint**: >= 8.x
 
 ### 🔄 Migration Notes
 
@@ -59,11 +61,14 @@ This is a **quality-focused release** with no breaking changes. However, note th
 - Better type inference for parsed parameters and operations
 
 #### ESLint Improvements
+- Migrated to **ESLint 10 with flat config** (`eslint.config.js`)
+- Migrated from `eslint-plugin-import` to `eslint-plugin-import-x` (ESLint 10 compatible)
+- Enabled **`flat/eslint-recommended`** and **`flat/recommended`** presets from @typescript-eslint
 - Fixed all `@typescript-eslint/no-explicit-any` violations
 - Resolved `@typescript-eslint/no-unsafe-*` errors with proper type guards
-- Corrected `import/order` violations with consistent grouping
+- Corrected `import-x/order` violations with consistent grouping
 - Added `no-console` exceptions for intentional logging (muted gqlg logs)
-- Fixed `restrict-template-expressions` issues with proper type assertions
+- Fixed type assertion issues with proper type guards
 
 #### Dependencies
 - Updated `@graphql-codegen/cli` from 6.1.0 to 7.1.3 for ESM support

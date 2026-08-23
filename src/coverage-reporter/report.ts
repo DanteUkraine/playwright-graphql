@@ -70,8 +70,9 @@ export default class GraphqlCoverageReport implements Reporter {
     this.saveHtmlSummary = options.saveHtmlSummary ?? false;
   }
 
-  async onBegin(): Promise<void> {
-    if (await isFileExists(this.coverageDir)) await rm(this.coverageDir, { recursive: true });
+  async onBegin(_config: unknown, _suite: unknown): Promise<void> {
+    const exists = await isFileExists(this.coverageDir);
+    if (exists) await rm(this.coverageDir, { recursive: true });
     await mkdir(this.coverageDir);
   }
 

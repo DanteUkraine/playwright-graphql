@@ -133,6 +133,8 @@ dist
 .ssh
 lib
 .idea
+.agents/
+skills-lock.json
 
 # tests
 gql/
