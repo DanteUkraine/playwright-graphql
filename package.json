@@ -74,6 +74,6 @@
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "@playwright/test": ">= 1.66.0"
+    "@playwright/test": ">= 1.65.x"
   }
 }

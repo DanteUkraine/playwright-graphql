@@ -140,3 +140,4 @@ skills-lock.json
 gql/
 tests/codegen-test/
 playground/
+test-results/
