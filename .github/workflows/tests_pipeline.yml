@@ -46,22 +46,18 @@ jobs:
         bun: [ '1.4.4' ]
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          cache: 'npm'
-      - uses: bun-actions/setup-bun@v4
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ matrix.bun }}
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
       - name: Build
-        run: npm run build
+        run: bun run build
       - name: Run tests under Bun
         run: bun run test
       - name: Verify ESLint
-        run: npm run lint
+        run: bun run lint
       - name: Run Bun runner tests
         run: bun --bun playwright test
         timeout-minutes: 5
