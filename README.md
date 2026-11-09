@@ -11,7 +11,7 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 
 - **Node.js**: >= 20.19.0 (required for ESM support and ESLint 10). **Tested on Node.js 22 LTS and 24**
 - **TypeScript**: >= 6.0.3 (required for ESM and new language features)
-- **@playwright/test**: >= 1.44.x (peer dependency)
+- **@playwright/test**: >= 1.66.0 (peer dependency). Requires **1.66+** for the Bun runtime (`bun --bun playwright test`).
 - **ESLint**: >= 10.x (using flat config)
 - **TypeScript-ESLint**: >= 8.x
 
@@ -27,6 +27,7 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 - ✅ Complete ts-morph AST migration for type safety
 - ✅ ESLint compliant with strict @typescript-eslint rules
 - ✅ **Node.js 20.19+ support** with native fetch schema introspection
+- ✅ **Bun runtime support** — runs under `bun --bun playwright test` (Playwright 1.66+) with the test runner transpiling your TypeScript files through Bun
 
 The built-in CLI simplifies code generation process to one simple command.
 ```bash

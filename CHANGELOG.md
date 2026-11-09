@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.1] - 2026-11-09
+
+### 🚀 New Features
+
+- **Bun runtime support**: `playwright-graphql` is verified to work under the Playwright Bun runtime (`bun --bun playwright test`). With Playwright 1.66+, the test runner transpiles your TypeScript test files through Bun itself, and both `getSdkRequester` and the `ts-morph`-based GraphQL coverage reporter run correctly.
+
+### 🔧 Changes
+
+- **Peer dependency bumped**: `@playwright/test` peer dependency raised from `>= 1.44.x` to `>= 1.66.0` to align with the Playwright release that adds the Bun runtime. Bun runtime support requires Playwright **1.66+** (available as alpha at release time).
+
+### 📋 Requirements
+
+- **@playwright/test**: `>= 1.66.0` (peer dependency). The Bun runtime (`bun --bun playwright test`) requires Playwright `1.66+`.
+
+---
+
 ## [2.3.0-rc1] - 2026-06-27
 
 ### ✨ New Features
