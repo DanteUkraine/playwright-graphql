@@ -61,10 +61,12 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
+    "@types/bun": "^1.4.4",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.13.11",
+    "@types/node": "^26.6.6",
     "@typescript-eslint/eslint-plugin": "^8.67.0",
     "@typescript-eslint/parser": "^8.67.0",
+    "@typescript/native": "npm:typescript@^7.0.0",
     "cross-env": "^7.0.3",
     "eslint": "^10.8.1",
     "eslint-plugin-import-x": "^4.17.1",
