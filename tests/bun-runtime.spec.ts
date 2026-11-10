@@ -1,7 +1,7 @@
 import http from 'node:http';
 import { AddressInfo } from 'node:net';
 import { parse } from 'graphql';
-import { getSdkRequester } from '../lib/index.js';
+import { getSdkRequester } from '../src';
 import { test, expect } from '@playwright/test';
 
 // In-repo mock GraphQL endpoint — no external network required.
