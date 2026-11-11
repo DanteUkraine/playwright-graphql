@@ -381,6 +381,11 @@ async function main(): Promise<void> {
     if (argv.custom) {
         const codegen = await loadCodegenConfig({ configFilePath: argv.codegen });
 
+        if (!codegen) {
+            console.error(`Codegen config not found: ${argv.codegen}`);
+            return;
+        }
+
         await generate(codegen.config, true);
 
         const gqlFiles = Object.keys(codegen.config.generates);

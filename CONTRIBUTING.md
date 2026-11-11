@@ -36,12 +36,12 @@ Please be respectful and inclusive in all interactions.
 
 Before you begin, ensure you have the following installed:
 
-- **Node.js**: >= 22.x (required for ESLint 10). **Tested on Node.js 22 LTS and 24**
+- **Node.js**: >= 20.19.0 (required for ESM support and ESLint 10). **Tested on Node.js 22 LTS and 24**
 - **npm**: >= 9.x (comes with Node.js)
-- **TypeScript**: >= 6.0.3
+- **TypeScript**: 7.x for build/type-checking (`@typescript/native`); 6.0.3+ for the Jest/ts-jest runner
 - **Git**: Latest version
 
-> **Note on Node.js 22**: This project uses native fetch for schema introspection, which is fully compatible with Node.js 22+ without any additional dependencies.
+> **Note on Node.js 20.19+**: This project uses native fetch for schema introspection, which is fully compatible with Node.js 20.19+ without any additional dependencies.
 > **Note on ESLint**: This project uses ESLint 10 with flat config. Legacy `.eslintrc.*` files are not supported.
 
 ### Quick Start
@@ -171,6 +171,8 @@ playwright-graphql/
 - Use **type guards** for runtime type validation
 - Prefer **`unknown`** over `any` for dynamic values
 - Use **`Record<string, T>`** instead of `{[key: string]: T}` or `{}`
+
+> **Two TypeScript versions are installed on purpose.** `@typescript/native` (TS 7.x) provides the `tsc` used by `npm run build`/`clean`, while the `typescript` package (6.0.3) is used by `jest`/`ts-jest` and `ts-node`. Do **not** remove either: dropping `typescript@6` breaks the test runner, and dropping `@typescript/native` breaks the build. This split exists because `ts-jest` is not yet compatible with TypeScript 7.
 
 ### Error Handling
 

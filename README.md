@@ -10,8 +10,9 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 ## ⚙️ Prerequisites
 
 - **Node.js**: >= 20.19.0 (required for ESM support and ESLint 10). **Tested on Node.js 22 LTS and 24**
-- **TypeScript**: >= 6.0.3 (required for ESM and new language features)
-- **@playwright/test**: >= 1.44.x (peer dependency)
+- **TypeScript**: **7.x** for build & type-checking (`@typescript/native`). **6.0.3+** for the Jest/ts-jest test runner (both are installed). Required for ESM and new language features.
+- **Bun**: 1.4.4+ (optional, only for the Bun runtime `bun --bun playwright test`)
+- **@playwright/test**: >= 1.65.x (peer dependency). Requires **1.65+** for the Bun runtime (`bun --bun playwright test`).
 - **ESLint**: >= 10.x (using flat config)
 - **TypeScript-ESLint**: >= 8.x
 
@@ -23,15 +24,45 @@ It enables you to generate an auto-generated GraphQL API client with autocomplet
 - 📊 Comprehensive schema and operation generation
 - 🔍 Flexible request handling and response management
 - 📈 Optional GraphQL coverage reporting
-- ✅ Full ESM compatibility with @graphql-codegen/cli@7.1.3
+- ✅ Full ESM compatibility with @graphql-codegen/cli@7.4.6
 - ✅ Complete ts-morph AST migration for type safety
 - ✅ ESLint compliant with strict @typescript-eslint rules
 - ✅ **Node.js 20.19+ support** with native fetch schema introspection
+- ✅ **Bun runtime support** — runs under `bun --bun playwright test` (Playwright 1.65+) with the test runner transpiling your TypeScript files through Bun
 
 The built-in CLI simplifies code generation process to one simple command.
 ```bash
 playwright-graphql --schema schema.gql
 ```
+
+---
+
+## 🆕 What's New in 2.5.0
+
+This release adds **Bun runtime support** and bumps the toolchain to align with the Playwright release that ships the Bun runtime. It introduces no breaking changes.
+
+### ✨ Major Improvements
+
+| Feature | Description | Impact |
+|---------|-------------|--------|
+| **Bun Runtime Support** | Runs under `bun --bun playwright test` (Playwright 1.65+). Both `getSdkRequester` and the ts-morph-based coverage reporter work under Bun | ✅ Test with the Bun runtime |
+| **ESM Compatibility** | Full support for ECMAScript Modules with @graphql-codegen/cli@7.4.6 | ✅ Works with modern ESM projects |
+| **Type Safety** | Comprehensive type safety with strict @typescript-eslint rules | ✅ Catches errors at compile time |
+| **Node.js 20.19+ Support** | Native fetch-based schema introspection | ✅ Works on Node.js 20.19+ |
+
+### 📦 Dependency Updates
+
+- `@playwright/test` peer dependency: `>= 1.44.x` → **`>= 1.65.x`** (required for the Bun runtime)
+- `graphql`: promoted to a **direct dependency** (used at runtime by `getSdkRequester` and by generated clients)
+- `@graphql-codegen/cli`: **7.1.3 → 7.4.6**
+- TypeScript: **7.x** for build (`@typescript/native`); **6.0.3+** for the Jest runner
+- Added: `bun.lock` lockfile and `@types/bun` for the Bun runtime
+
+### 📋 Requirements
+
+- **@playwright/test**: `>= 1.65.x` (peer dependency). The Bun runtime (`bun --bun playwright test`) requires Playwright **1.65+**.
+
+For detailed changes, see [CHANGELOG.md](./CHANGELOG.md).
 
 ---
 
