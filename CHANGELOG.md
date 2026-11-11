@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 📋 Requirements
 
 - **@playwright/test**: `>= 1.65.x` (peer dependency). The Bun runtime (`bun --bun playwright test`) requires Playwright `1.65+`.
+- **Node.js**: `>= 20.19.0` (required for ESM support and ESLint 10). Tested on Node.js 22 LTS and 24.
+- **TypeScript**: `7.x` for build/type-checking (`@typescript/native`); `6.0.3+` for the Jest/ts-jest test runner.
 
 ---
 
