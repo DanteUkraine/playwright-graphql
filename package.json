@@ -28,7 +28,7 @@
     "install:deps": "npm install --registry=https://registry.npmjs.org",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "test": "cross-env PW_GQL_TEMP_DIR=./tests/resources/coverageDir jest"
+    "test": "jest"
   },
   "engines": {
     "node": ">=20.19.0"
@@ -67,7 +67,6 @@
     "@typescript-eslint/eslint-plugin": "^8.67.0",
     "@typescript-eslint/parser": "^8.67.0",
     "@typescript/native": "npm:typescript@^7.0.0",
-    "cross-env": "^7.0.3",
     "eslint": "^10.8.1",
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-unused-imports": "^4.4.1",

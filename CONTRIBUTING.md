@@ -172,6 +172,8 @@ playwright-graphql/
 - Prefer **`unknown`** over `any` for dynamic values
 - Use **`Record<string, T>`** instead of `{[key: string]: T}` or `{}`
 
+> **Two TypeScript versions are installed on purpose.** `@typescript/native` (TS 7.x) provides the `tsc` used by `npm run build`/`clean`, while the `typescript` package (6.0.3) is used by `jest`/`ts-jest` and `ts-node`. Do **not** remove either: dropping `typescript@6` breaks the test runner, and dropping `@typescript/native` breaks the build. This split exists because `ts-jest` is not yet compatible with TypeScript 7.
+
 ### Error Handling
 
 - Use **descriptive error messages**
